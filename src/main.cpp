@@ -48,5 +48,10 @@ static auto initArgs(int argc, const char **argv)
 int MAIN(int argc, const char **argv)
 {
     auto program = initArgs(argc, argv);
+
+    if (!program["headless"].as<bool>()) {
+        LFATAL("Not running in headless mode is currently not possible! Please use --headless");
+        return 1;
+    }
     return 0;
 }
