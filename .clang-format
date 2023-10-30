@@ -1,7 +1,7 @@
 BasedOnStyle: Webkit
 NamespaceIndentation: None
 IndentWidth: 4
-ColumnLimit: 79 # \n counts in the coding style
+ColumnLimit: 120
 AlignAfterOpenBracket: BlockIndent
 BreakConstructorInitializers: AfterColon
 Cpp11BracedListStyle: true

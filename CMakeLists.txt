@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
+
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24.0)
+    cmake_policy(SET CMP0135 OLD)
+endif()
+
 project(liskvork
     VERSION 0.1.0
     DESCRIPTION ""
@@ -34,19 +39,53 @@ set_target_properties(liskvork PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
 
+target_compile_definitions(liskvork PUBLIC PROGRAM_VERSION="${CMAKE_PROJECT_VERSION}")
+
 file(COPY ${data} DESTINATION resources)
 
 ###############################################################################
 ## dependencies ###############################################################
 ###############################################################################
 
-# No need for anything yet so this can stay here for now
+set(FETCHCONTENT_QUIET OFF)
 
-# find_package(Boost 1.36.0 COMPONENTS filesystem system REQUIRED)
+include(FetchContent)
 
-# target_link_libraries(example PUBLIC
-#   ${Boost_LIBRARIES}
-# )
+FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG yaml-cpp-0.7.0
+    GIT_PROGRESS TRUE
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_Declare(
+    argparse
+    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+    GIT_TAG v2.9
+    GIT_PROGRESS TRUE
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.11.0
+    GIT_PROGRESS TRUE
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(
+    yaml-cpp
+    argparse
+    spdlog
+)
+
+target_link_libraries(liskvork PUBLIC
+  argparse
+  yaml-cpp
+  spdlog::spdlog
+)
 
 ###############################################################################
 ## testing ####################################################################
