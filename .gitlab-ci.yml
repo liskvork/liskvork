@@ -5,7 +5,7 @@ build-job:
   script:
     - mkdir build && cd build
     - cmake -DCMAKE_BUILD_TYPE=Release ..
-    - make -j2
+    - make -j6
     - cpack -C release
   artifacts:
     when: on_success
