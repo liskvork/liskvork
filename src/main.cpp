@@ -21,6 +21,18 @@ static auto initArgs(int argc, const char **argv)
         .possibleValues(true, false)
         .defaultValue(false)
         .implicit();
+
+    program.add("player1")
+        .help("Path to the executable for player1")
+        .valueFromArgument("--player1")
+        .valueFromEnvironmentVariable("LV_PLAYER1")
+        .required();
+
+    program.add("player2")
+        .help("Path to the executable for player2")
+        .valueFromArgument("--player2")
+        .valueFromEnvironmentVariable("LV_PLAYER2")
+        .required();
     // clang-format on
 
     try {
@@ -53,5 +65,7 @@ int MAIN(int argc, const char **argv)
         LFATAL("Not running in headless mode is currently not possible! Please use --headless");
         return 1;
     }
+    LDEBUG("Loading player 1 {}", program["player1"].as<std::string>());
+    LDEBUG("Loading player 2 {}", program["player2"].as<std::string>());
     return 0;
 }
