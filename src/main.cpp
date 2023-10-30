@@ -19,7 +19,7 @@ static auto initArgs(int argc, const char **argv)
         .valueFromArgument("--headless")
         .valueFromEnvironmentVariable("LV_HEADLESS")
         .possibleValues(true, false)
-        .defaultValue(true)
+        .defaultValue(false)
         .implicit();
     // clang-format on
 
