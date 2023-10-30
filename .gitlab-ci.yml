@@ -11,6 +11,7 @@ build-job:
     when: on_success
     paths:
       - build
+    expire-in: 1 week
 
 test-job:
   stage: test
