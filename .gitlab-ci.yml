@@ -10,7 +10,8 @@ build-job:
   artifacts:
     when: on_success
     paths:
-      - build
+      - build/liskvork-*.rpm
+      - build/liskvork-*.deb
 
 test-job:
   stage: test
