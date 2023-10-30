@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "Player.hpp"
 #include "configuration/ConfigHandler.hpp"
 #include "logging/logging.hpp"
 
@@ -69,6 +70,12 @@ int MAIN(int argc, const char **argv)
         return 1;
     }
     LDEBUG("Loading player 1 {}", program["player1"].as<std::string>());
+    auto player1 = lv::Player::loadFromBinary(program["player1"].as<std::string>());
+    if (!player1)
+        return 1;
     LDEBUG("Loading player 2 {}", program["player2"].as<std::string>());
+    auto player2 = lv::Player::loadFromBinary(program["player2"].as<std::string>());
+    if (!player2)
+        return 1;
     return 0;
 }
