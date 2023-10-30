@@ -16,6 +16,7 @@ static auto initArgs(int argc, const char **argv)
     // clang-format off
     program.add("headless")
         .help("No preview window opens")
+        .valueFromConfig("general", "headless")
         .valueFromArgument("--headless")
         .valueFromEnvironmentVariable("LV_HEADLESS")
         .possibleValues(true, false)
@@ -24,12 +25,14 @@ static auto initArgs(int argc, const char **argv)
 
     program.add("player1")
         .help("Path to the executable for player1")
+        .valueFromConfig("players", "player1")
         .valueFromArgument("--player1")
         .valueFromEnvironmentVariable("LV_PLAYER1")
         .required();
 
     program.add("player2")
         .help("Path to the executable for player2")
+        .valueFromConfig("players", "player2")
         .valueFromArgument("--player2")
         .valueFromEnvironmentVariable("LV_PLAYER2")
         .required();
