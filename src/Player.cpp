@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <sys/resource.h>
 #include <unistd.h>
 
@@ -18,6 +19,7 @@ Player::Player(const std::filesystem::path &path, unsigned long memoryLimit, siz
 {
     if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path)) {
         LFATAL("Cannot open player executable with path: {}", path.string());
+        throw std::runtime_error("Could not create new player");
     }
     _playerPID = fork();
     if (_playerPID == -1) {
