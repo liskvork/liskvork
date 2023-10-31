@@ -5,6 +5,7 @@
 
 #include "Player.hpp"
 #include "configuration/ConfigHandler.hpp"
+#include "liskvork.hpp"
 #include "logging/logging.hpp"
 #include "options.hpp"
 
@@ -114,16 +115,17 @@ int MAIN(int argc, const char **argv)
             LFATAL("Not running in headless mode is currently not possible! Please use --headless");
             return 1;
         }
-        LDEBUG("Loading player 1 {}", program["player1"].as<std::string>());
+        LDEBUG("Loading player 1 {}", program["player1-exe"].as<std::string>());
         lv::Player player1(
             program["player1-exe"].as<std::string>(), program["player1-limits-memory"].as<unsigned long>(),
             program["player1-limits-time"].as<size_t>()
         );
-        LDEBUG("Loading player 2 {}", program["player2"].as<std::string>());
+        LDEBUG("Loading player 2 {}", program["player2-exe"].as<std::string>());
         lv::Player player2(
-            program["player2-exe"].as<std::string>(), program["player1-limits-memory"].as<unsigned long>(),
-            program["player1-limits-time"].as<size_t>()
+            program["player2-exe"].as<std::string>(), program["player2-limits-memory"].as<unsigned long>(),
+            program["player2-limits-time"].as<size_t>()
         );
+        return liskvork(program, player1, player2);
     } catch (const std::exception &e) {
         LFATAL("Error at root!");
         LFATAL(e.what());

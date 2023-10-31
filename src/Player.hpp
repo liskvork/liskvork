@@ -13,13 +13,20 @@ class Player {
 public:
     Player(const std::filesystem::path &path, unsigned long memoryLimit, size_t timeLimit);
 
+    NODISCARD const std::string &getName() const noexcept { return _name; }
+    NODISCARD const std::string &getVersion() const noexcept { return _version; }
+    NODISCARD const std::string &getAuthor() const noexcept { return _author; }
+    NODISCARD const std::string &getCountry() const noexcept { return _country; }
+    NODISCARD const std::string &getWWW() const noexcept { return _www; }
+    NODISCARD const std::string &getEmail() const noexcept { return _email; }
+
 private:
     std::string _name;
-    std::optional<std::string> _version;
-    std::optional<std::string> _author;
-    std::optional<std::string> _country;
-    std::optional<std::string> _www;
-    std::optional<std::string> _email;
+    std::string _version;
+    std::string _author;
+    std::string _country;
+    std::string _www;
+    std::string _email;
     int _playerPID;
     unsigned long _memoryLimit;
     size_t _timeLimit;
