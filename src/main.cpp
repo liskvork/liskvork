@@ -82,17 +82,9 @@ int MAIN(int argc, const char **argv)
             return 1;
         }
         LDEBUG("Loading player 1 {}", program["player1"].as<std::string>());
-        auto player1 =
-            lv::Player::loadFromBinary(program["player1"].as<std::string>(), defaultMemoryLimit, defaultTimeLimit);
-        if (!player1) {
-            return 1;
-        }
+        lv::Player player1(program["player1-exe"].as<std::string>(), defaultMemoryLimit, defaultTimeLimit);
         LDEBUG("Loading player 2 {}", program["player2"].as<std::string>());
-        auto player2 =
-            lv::Player::loadFromBinary(program["player2"].as<std::string>(), defaultMemoryLimit, defaultTimeLimit);
-        if (!player2) {
-            return 1;
-        }
+        lv::Player player2(program["player2-exe"].as<std::string>(), defaultMemoryLimit, defaultTimeLimit);
     } catch (const std::exception &e) {
         LFATAL("Error at root!");
         LFATAL(e.what());
