@@ -1,5 +1,6 @@
 #include <exception>
 #include <iostream>
+#include <limits>
 #include <optional>
 
 #include "Player.hpp"
@@ -29,19 +30,51 @@ std::optional<configuration::ConfigHandler> initArgs(int argc, const char **argv
         .defaultValue(false)
         .implicit();
 
-    program->add("player1")
+    program->add("player1-exe")
         .help("Path to the executable for player1")
-        .valueFromConfig("players", "player1")
-        .valueFromArgument("--player1")
-        .valueFromEnvironmentVariable("LV_PLAYER1")
-        .required();
+        .valueFromConfig("player1", "exe")
+        .valueFromArgument("--player1-exe")
+        .valueFromEnvironmentVariable("LV_PLAYER1_EXE")
+        .defaultValue("player1");
 
-    program->add("player2")
+    program->add("player1-limits-memory")
+        .help("Memory limit for player1 in bytes")
+        .valueFromConfig("player1", "limits", "memory")
+        .valueFromArgument("--player1-limits-memory")
+        .valueFromEnvironmentVariable("LV_PLAYER1_LIMITS_MEMORY")
+        .defaultValue(defaultMemoryLimit)
+        .inRange(std::numeric_limits<unsigned long>().min(), std::numeric_limits<unsigned long>().max());
+
+    program->add("player1-limits-time")
+        .help("Time limit for player1 in milliseconds")
+        .valueFromConfig("player1", "limits", "time")
+        .valueFromArgument("--player1-limits-time")
+        .valueFromEnvironmentVariable("LV_PLAYER1_LIMITS_TIME")
+        .defaultValue(defaultTimeLimit)
+        .inRange(std::numeric_limits<size_t>().min(), std::numeric_limits<size_t>().max());
+
+    program->add("player2-exe")
         .help("Path to the executable for player2")
-        .valueFromConfig("players", "player2")
-        .valueFromArgument("--player2")
-        .valueFromEnvironmentVariable("LV_PLAYER2")
-        .required();
+        .valueFromConfig("player2", "exe")
+        .valueFromArgument("--player2-exe")
+        .valueFromEnvironmentVariable("LV_PLAYER2_EXE")
+        .defaultValue("player2");
+
+    program->add("player2-limits-memory")
+        .help("Memory limit for player2 in bytes")
+        .valueFromConfig("player2", "limits", "memory")
+        .valueFromArgument("--player2-limits-memory")
+        .valueFromEnvironmentVariable("LV_PLAYER2_LIMITS_MEMORY")
+        .defaultValue(defaultMemoryLimit)
+        .inRange(std::numeric_limits<unsigned long>().min(), std::numeric_limits<unsigned long>().max());
+
+    program->add("player2-limits-time")
+        .help("Time limit for player2 in milliseconds")
+        .valueFromConfig("player2", "limits", "time")
+        .valueFromArgument("--player2-limits-time")
+        .valueFromEnvironmentVariable("LV_PLAYER2_LIMITS_TIME")
+        .defaultValue(defaultTimeLimit)
+        .inRange(std::numeric_limits<size_t>().min(), std::numeric_limits<size_t>().max());
     // clang-format on
 
     try {
@@ -57,7 +90,7 @@ std::optional<configuration::ConfigHandler> initArgs(int argc, const char **argv
 
     try {
         program->parse(argc, argv);
-    } catch (const std::runtime_error &err) {
+    } catch (const std::exception &err) {
         std::cerr << err.what() << std::endl;
         std::cerr << program.value();
         return std::nullopt;
@@ -82,9 +115,15 @@ int MAIN(int argc, const char **argv)
             return 1;
         }
         LDEBUG("Loading player 1 {}", program["player1"].as<std::string>());
-        lv::Player player1(program["player1-exe"].as<std::string>(), defaultMemoryLimit, defaultTimeLimit);
+        lv::Player player1(
+            program["player1-exe"].as<std::string>(), program["player1-limits-memory"].as<unsigned long>(),
+            program["player1-limits-time"].as<size_t>()
+        );
         LDEBUG("Loading player 2 {}", program["player2"].as<std::string>());
-        lv::Player player2(program["player2-exe"].as<std::string>(), defaultMemoryLimit, defaultTimeLimit);
+        lv::Player player2(
+            program["player2-exe"].as<std::string>(), program["player1-limits-memory"].as<unsigned long>(),
+            program["player1-limits-time"].as<size_t>()
+        );
     } catch (const std::exception &e) {
         LFATAL("Error at root!");
         LFATAL(e.what());
