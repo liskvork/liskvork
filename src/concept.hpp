@@ -9,8 +9,8 @@
 
 template <typename T>
 concept Streamable =
-requires(std::ostream &os, const T &value) {
-{ os << value } -> std::convertible_to<std::ostream &>;
+requires(std::ostream &output_stream, const T &value) {
+{ output_stream << value } -> std::convertible_to<std::ostream &>;
 };
 
 template<typename Derived, typename Base>

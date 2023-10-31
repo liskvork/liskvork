@@ -6,7 +6,7 @@
 
 namespace lv {
 
-std::optional<Player> Player::loadFromBinary(std::filesystem::path path)
+std::optional<Player> Player::loadFromBinary(const std::filesystem::path &path)
 {
     std::optional<Player> player = std::nullopt;
 

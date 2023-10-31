@@ -8,7 +8,7 @@ namespace lv {
 
 class Player {
 public:
-    static std::optional<Player> loadFromBinary(std::filesystem::path path);
+    static std::optional<Player> loadFromBinary(const std::filesystem::path &path);
 
 private:
     Player(

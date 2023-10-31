@@ -1,4 +1,6 @@
+#include <exception>
 #include <iostream>
+#include <optional>
 
 #include "Player.hpp"
 #include "configuration/ConfigHandler.hpp"
@@ -10,12 +12,14 @@
 #define MAIN main
 #endif
 
-static auto initArgs(int argc, const char **argv)
+namespace {
+
+std::optional<configuration::ConfigHandler> initArgs(int argc, const char **argv)
 {
-    auto program = configuration::ConfigHandler(PROGRAM_NAME, PROGRAM_VERSION);
+    std::optional<configuration::ConfigHandler> program = configuration::ConfigHandler(PROGRAM_NAME, PROGRAM_VERSION);
 
     // clang-format off
-    program.add("headless")
+    program->add("headless")
         .help("No preview window opens")
         .valueFromConfig("general", "headless")
         .valueFromArgument("--headless")
@@ -24,14 +28,14 @@ static auto initArgs(int argc, const char **argv)
         .defaultValue(false)
         .implicit();
 
-    program.add("player1")
+    program->add("player1")
         .help("Path to the executable for player1")
         .valueFromConfig("players", "player1")
         .valueFromArgument("--player1")
         .valueFromEnvironmentVariable("LV_PLAYER1")
         .required();
 
-    program.add("player2")
+    program->add("player2")
         .help("Path to the executable for player2")
         .valueFromConfig("players", "player2")
         .valueFromArgument("--player2")
@@ -40,42 +44,54 @@ static auto initArgs(int argc, const char **argv)
     // clang-format on
 
     try {
-        program.load("./config.yml");
+        program->load("./config.yml");
     } catch (const configuration::BadFile &) {
         if (std::filesystem::exists("./config.yml")) {
             LERROR("Failed to open config file, check permissions");
-            std::exit(1);
+            return std::nullopt;
         }
         LWARN("No config file found, creating one");
-        program.save("./config.yml");
+        program->save("./config.yml");
     }
 
     try {
-        program.parse(argc, argv);
+        program->parse(argc, argv);
     } catch (const std::runtime_error &err) {
         std::cerr << err.what() << std::endl;
-        std::cerr << program;
-        std::exit(1);
+        std::cerr << program.value();
+        return std::nullopt;
     }
 
     return program;
 }
 
+}
+
 int MAIN(int argc, const char **argv)
 {
-    auto program = initArgs(argc, argv);
-
-    if (!program["headless"].as<bool>()) {
-        LFATAL("Not running in headless mode is currently not possible! Please use --headless");
+    auto program_opt = initArgs(argc, argv);
+    if (!program_opt.has_value()) {
         return 1;
     }
-    LDEBUG("Loading player 1 {}", program["player1"].as<std::string>());
-    auto player1 = lv::Player::loadFromBinary(program["player1"].as<std::string>());
-    if (!player1)
+    try {
+        auto &program = program_opt.value();
+
+        if (!program["headless"].as<bool>()) {
+            LFATAL("Not running in headless mode is currently not possible! Please use --headless");
+            return 1;
+        }
+        LDEBUG("Loading player 1 {}", program["player1"].as<std::string>());
+        auto player1 = lv::Player::loadFromBinary(program["player1"].as<std::string>());
+        if (!player1) {
+            return 1;
+        }
+        LDEBUG("Loading player 2 {}", program["player2"].as<std::string>());
+        auto player2 = lv::Player::loadFromBinary(program["player2"].as<std::string>());
+        if (!player2) {
+            return 1;
+        }
+    } catch (const std::exception &e) {
         return 1;
-    LDEBUG("Loading player 2 {}", program["player2"].as<std::string>());
-    auto player2 = lv::Player::loadFromBinary(program["player2"].as<std::string>());
-    if (!player2)
-        return 1;
+    }
     return 0;
 }
