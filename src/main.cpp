@@ -5,6 +5,7 @@
 #include "Player.hpp"
 #include "configuration/ConfigHandler.hpp"
 #include "logging/logging.hpp"
+#include "options.hpp"
 
 #ifdef UNIT_TESTS
 #define MAIN not_main
@@ -81,16 +82,20 @@ int MAIN(int argc, const char **argv)
             return 1;
         }
         LDEBUG("Loading player 1 {}", program["player1"].as<std::string>());
-        auto player1 = lv::Player::loadFromBinary(program["player1"].as<std::string>());
+        auto player1 =
+            lv::Player::loadFromBinary(program["player1"].as<std::string>(), defaultMemoryLimit, defaultTimeLimit);
         if (!player1) {
             return 1;
         }
         LDEBUG("Loading player 2 {}", program["player2"].as<std::string>());
-        auto player2 = lv::Player::loadFromBinary(program["player2"].as<std::string>());
+        auto player2 =
+            lv::Player::loadFromBinary(program["player2"].as<std::string>(), defaultMemoryLimit, defaultTimeLimit);
         if (!player2) {
             return 1;
         }
     } catch (const std::exception &e) {
+        LFATAL("Error at root!");
+        LFATAL(e.what());
         return 1;
     }
     return 0;
