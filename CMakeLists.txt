@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.13)
 option(USE_CLANG "Build application with clang" ON)
 option(STATIC "Build the binary statically" OFF)
 
+message(STATUS "Linking statically: ${STATIC}")
+
 if (USE_CLANG)
     find_program(CLANG_EXECUTABLE clang REQUIRED)
     set(CMAKE_C_COMPILER ${CLANG_EXECUTABLE})
