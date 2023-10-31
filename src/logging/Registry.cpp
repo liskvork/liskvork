@@ -37,10 +37,6 @@ Registry::Registry()
 
     auto console = this->registerLogger("main");
 
-#ifdef DEBUG_NETWORK
-    auto network = this->registerLogger("network");
-#endif
-
     spdlog::set_default_logger(console);
 
 #ifdef NDEBUG
