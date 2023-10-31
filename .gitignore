@@ -10,7 +10,7 @@ coding-style.sh
 reports/
 
 # Binary
-build
+build*
 
 # Cache folder
 .cache
