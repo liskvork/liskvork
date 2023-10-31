@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 3.13)
 
 option(USE_CLANG "Build application with clang" ON)
+option(STATIC "Build the binary statically" OFF)
 
 if (USE_CLANG)
     find_program(CLANG_EXECUTABLE clang REQUIRED)
     set(CMAKE_C_COMPILER ${CLANG_EXECUTABLE})
+
     find_program(CLANGPP_EXECUTABLE clang++ REQUIRED)
     set(CMAKE_CXX_COMPILER ${CLANGPP_EXECUTABLE})
 endif()
@@ -32,7 +34,28 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+
 add_executable(liskvork ${sources} ${data})
+
+if (CMAKE_BUILD_TYPE MATCHES Release)
+    if (ipo_supported)
+        message(STATUS "IPO / LTO enabled")
+        set_property(TARGET liskvork PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else ()
+        message(WARNING "IPO / LTO not supported: <${ipo_error}>")
+    endif ()
+endif ()
+
+if (STATIC)
+    set_target_properties(liskvork PROPERTIES LINK_SEARCH_START_STATIC 1)
+    set_target_properties(liskvork PROPERTIES LINK_SEARCH_END_STATIC 1)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+
+    # set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+    set(CMAKE_EXE_LINKER_FLAGS "-static")
+endif ()
 
 target_compile_options(liskvork PUBLIC -Wall -Wextra -Wconversion)
 
@@ -98,7 +121,7 @@ target_link_libraries(liskvork PUBLIC
 
 find_package(GTest)
 
-if(GTEST_FOUND)
+if(GTEST_FOUND AND NOT STATIC)
   add_executable(unit_tests ${sources_test} ${sources})
 
   target_compile_definitions(unit_tests PUBLIC UNIT_TESTS)
