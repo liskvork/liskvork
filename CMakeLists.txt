@@ -1,7 +1,12 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.13)
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24.0)
-    cmake_policy(SET CMP0135 OLD)
+option(USE_CLANG "Build application with clang" ON)
+
+if (USE_CLANG)
+    find_program(CLANG_EXECUTABLE clang REQUIRED)
+    set(CMAKE_C_COMPILER ${CLANG_EXECUTABLE})
+    find_program(CLANGPP_EXECUTABLE clang++ REQUIRED)
+    set(CMAKE_CXX_COMPILER ${CLANGPP_EXECUTABLE})
 endif()
 
 project(liskvork
@@ -47,9 +52,9 @@ file(COPY ${data} DESTINATION resources)
 ## dependencies ###############################################################
 ###############################################################################
 
-set(FETCHCONTENT_QUIET OFF)
-
 include(FetchContent)
+
+set(FETCHCONTENT_QUIET OFF)
 
 FetchContent_Declare(
     yaml-cpp
@@ -124,8 +129,15 @@ install(DIRECTORY resources DESTINATION ${CMAKE_INSTALL_BINDIR})
 set(CPACK_PACKAGE_NAME "liskvork")
 set(CPACK_PACKAGE_VERSION ${CMAKE_PROJECT_VERSION})
 
+execute_process(
+        COMMAND git log -1 --format=%h
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+        OUTPUT_VARIABLE GIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 set(CPACK_PACKAGE_FILE_NAME
-    "${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_BUILD_TYPE}-${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}"
+    "${CMAKE_PROJECT_NAME}-${CMAKE_PROJECT_VERSION}-${GIT_HASH}-${CMAKE_SYSTEM_NAME}-${CMAKE_BUILD_TYPE}-${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}"
 )
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "liskvork")
 set(CPACK_PACKAGE_CONTACT "Alexandre Flion <huntears@kreog.com>")
