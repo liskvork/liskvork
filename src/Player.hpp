@@ -14,6 +14,7 @@ public:
     Player(const std::filesystem::path &path, unsigned long memoryLimit, size_t timeLimit);
 
     NODISCARD const std::string &getName() const noexcept { return _name; }
+    NODISCARD const std::string &getDescription() const noexcept { return _description; }
     NODISCARD const std::string &getVersion() const noexcept { return _version; }
     NODISCARD const std::string &getAuthor() const noexcept { return _author; }
     NODISCARD const std::string &getCountry() const noexcept { return _country; }
