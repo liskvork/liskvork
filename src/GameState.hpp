@@ -1,0 +1,28 @@
+#ifndef A7D77E16_1E0B_4A0A_AB5A_189D36542A21
+#define A7D77E16_1E0B_4A0A_AB5A_189D36542A21
+
+#include <array>
+#include <cstdint>
+#include <optional>
+
+namespace lv {
+
+enum class SquareState {
+    EMPTY,
+    PLAYER1,
+    PLAYER2
+};
+
+struct Turn {
+    uint8_t x;
+    uint8_t y;
+};
+
+struct GameState {
+    std::array<std::array<SquareState, 20>, 20> playArea;
+    std::optional<Turn> lastTurn = std::nullopt;
+};
+
+}
+
+#endif /* A7D77E16_1E0B_4A0A_AB5A_189D36542A21 */

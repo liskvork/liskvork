@@ -6,6 +6,7 @@
 #include <optional>
 
 #include "CPipe.hpp"
+#include "GameState.hpp"
 #include "logging/logging.hpp"
 
 namespace lv {
@@ -46,6 +47,15 @@ public:
      * @return false INitialization failed
      */
     bool initialize();
+
+    /**
+     * @brief Lets the player take a turn
+     *
+     * @param gameState The global game state
+     * @return true The player won
+     * @return false The player didn't win
+     */
+    bool takeTurn(GameState &gameState);
 
 private:
     std::string _name;
