@@ -1,7 +1,9 @@
 #include <filesystem>
 #include <iostream>
 #include <optional>
+#include <regex>
 #include <stdexcept>
+#include <string>
 #include <sys/resource.h>
 #include <unistd.h>
 
@@ -27,8 +29,10 @@ Player::Player(const std::filesystem::path &path, unsigned long memoryLimit, siz
     }
     if (_playerPID == 0) { // In child process
         // Set the memory limit for the new player
-        const struct rlimit limits = {memoryLimit, memoryLimit};
-        setrlimit(RLIMIT_DATA, &limits);
+        if (memoryLimit) {
+            const struct rlimit limits = {memoryLimit, memoryLimit};
+            setrlimit(RLIMIT_DATA, &limits);
+        }
 
         ::dup2(_write_pipe.read_fd(), STDIN_FILENO);
         ::dup2(_read_pipe.write_fd(), STDOUT_FILENO);
@@ -47,6 +51,39 @@ Player::Player(const std::filesystem::path &path, unsigned long memoryLimit, siz
     _read_buf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(_read_pipe.read_fd(), std::ios::in);
     _stdin.rdbuf(_write_buf.get());
     _stdout.rdbuf(_read_buf.get());
+    // _stdin << "INFO timeout_match " << 0 << std::endl;
+    // _stdin << "INFO timeout_turn " << _timeLimit << std::endl;
+    // _stdin << "INFO max_memory " << _memoryLimit << std::endl;
+    LDEBUG("Getting about data about {}", path.string());
+    _stdin << "ABOUT" << std::endl;
+    const std::regex word_regex("(\\w+)=\"([^\"]*)\"");
+    bool gotName = false;
+    while (!gotName) {
+        std::string line;
+        std::getline(_stdout, line);
+        const auto words_begin = std::sregex_iterator(line.begin(), line.end(), word_regex);
+        const auto words_end = std::sregex_iterator();
+        for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
+            const std::smatch match = *i;
+            const auto key = match[1].str();
+            const auto value = match[2].str();
+            if (key == "name") {
+                _name = value;
+                gotName = true;
+            } else if (key == "version")
+                _version = value;
+            else if (key == "author")
+                _author = value;
+            else if (key == "country")
+                _author = value;
+            else if (key == "www")
+                _www = value;
+            else if (key == "description")
+                _description = value;
+            else
+                LWARN("Unknown key {} with value {} from {}", key, value, path.string());
+        }
+    }
     LDEBUG("Loaded player with name: {}", _name);
 }
 }
