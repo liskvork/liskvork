@@ -13,7 +13,8 @@
 
 namespace lv {
 
-Player::Player(const std::filesystem::path &path, unsigned long memoryLimit, size_t timeLimit):
+Player::Player(const std::filesystem::path &path, unsigned long memoryLimit, size_t timeLimit, uint8_t playerNumber):
+    _playerNumber(playerNumber),
     _playerPID(-1),
     _memoryLimit(memoryLimit),
     _timeLimit(timeLimit),
@@ -62,6 +63,8 @@ Player::Player(const std::filesystem::path &path, unsigned long memoryLimit, siz
     while (!gotName) {
         std::string line;
         std::getline(_stdout, line);
+        if (handlePotentialPrint(line))
+            continue;
         const auto words_begin = std::sregex_iterator(line.begin(), line.end(), word_regex);
         const auto words_end = std::sregex_iterator();
         for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
@@ -86,6 +89,39 @@ Player::Player(const std::filesystem::path &path, unsigned long memoryLimit, siz
         }
     }
     LDEBUG("Loaded player with name: {}", _name);
+}
+
+bool Player::handlePotentialPrint(const std::string &line) const
+{
+    if (line.starts_with("UNKNOWN "))
+        printUnknown(line.substr(8));
+    else if (line.starts_with("ERROR "))
+        printError(line.substr(6));
+    else if (line.starts_with("MESSAGE "))
+        printMessage(line.substr(8));
+    else if (line.starts_with("DEBUG "))
+        printDebug(line.substr(6));
+    else
+        return false;
+    return true;
+}
+
+bool Player::initialize()
+{
+    LDEBUG("Initializing player({})", _name);
+    _stdin << "START 20" << std::endl;
+    do {
+        std::string line;
+        std::getline(_stdout, line);
+        if (handlePotentialPrint(line))
+            continue;
+        if (line != "OK") {
+            LFATAL("Could not initialize player({})", _name);
+            return false;
+        }
+    } while (0);
+    LDEBUG("Initialized player({})", _name);
+    return true;
 }
 
 Player::~Player()

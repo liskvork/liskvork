@@ -9,7 +9,8 @@ void sigchld_handler(UNUSED int sig)
     int status;
 
     while ((p = waitpid(-1, &status, WNOHANG)) != -1) {
-        // TODO(huntears): Handle the death of a player
+        // TODO(huntears): Properly handle the death of a player
+        LFATAL("Player with PID {} died! (Is that a crash?)", p);
     }
 }
 
@@ -19,6 +20,8 @@ int liskvork(const configuration::ConfigHandler &config, lv::Player &player1, lv
     if (config["headless"].as<bool>()) {
         LINFO("Currently running in headless mode.");
     }
+    if (!player1.initialize() || !player2.initialize())
+        return 1;
     while (1) {
         std::string line;
         if (!std::getline(std::cin, line))
