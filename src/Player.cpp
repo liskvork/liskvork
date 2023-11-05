@@ -124,6 +124,26 @@ bool Player::initialize()
     return true;
 }
 
+bool Player::takeTurn(GameState &gameState)
+{
+    const bool isFirstTurn = !gameState.lastTurn.has_value();
+
+    if (isFirstTurn)
+        _stdin << "BEGIN" << std::endl;
+    else
+        _stdin << "TURN " << gameState.lastTurn->x << "," << gameState.lastTurn->y << std::endl;
+    while (1) {
+        // TODO(huntears): Check remaining time
+        std::string line;
+        std::getline(_stdout, line);
+        if (handlePotentialPrint(line))
+            continue;
+        LDEBUG("Play from player{}({}): {}", _playerNumber, _name, line);
+        // TODO(huntears): Handle a play
+    }
+    return false;
+}
+
 Player::~Player()
 {
     // Yes I am stopping the player with a sigkill, what about it?
