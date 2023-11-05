@@ -6,12 +6,13 @@
 #include <optional>
 
 #include "CPipe.hpp"
+#include "logging/logging.hpp"
 
 namespace lv {
 
 class Player {
 public:
-    Player(const std::filesystem::path &path, unsigned long memoryLimit, size_t timeLimit);
+    Player(const std::filesystem::path &path, unsigned long memoryLimit, size_t timeLimit, uint8_t number);
     ~Player();
 
     NODISCARD const std::string &getName() const noexcept { return _name; }
@@ -22,6 +23,30 @@ public:
     NODISCARD const std::string &getWWW() const noexcept { return _www; }
     NODISCARD const std::string &getEmail() const noexcept { return _email; }
 
+    NODISCARD int getPID() const noexcept { return _playerPID; }
+
+    void printUnknown(const std::string &msg) const { LWARN("({}) {}> [UNKNOWN] {}", _name, _playerNumber, msg); }
+    void printError(const std::string &msg) const { LERROR("({}) {}> [ERROR] {}", _name, _playerNumber, msg); }
+    void printMessage(const std::string &msg) const { LINFO("({}) {}> [MESSAGE] {}", _name, _playerNumber, msg); }
+    void printDebug(const std::string &msg) const { LDEBUG("({}) {}> [DEBUG] {}", _name, _playerNumber, msg); }
+
+    /**
+     * @brief Will call the correct print if needed
+     *
+     * @param line The line that the player sent
+     * @return true The line had a print
+     * @return false The line didn't have a print
+     */
+    bool handlePotentialPrint(const std::string &line) const;
+
+    /**
+     * @brief Initializes the state of the player
+     *
+     * @return true Initialization succeeded
+     * @return false INitialization failed
+     */
+    bool initialize();
+
 private:
     std::string _name;
     std::string _description;
@@ -30,9 +55,10 @@ private:
     std::string _country;
     std::string _www;
     std::string _email;
+    const uint8_t _playerNumber;
     int _playerPID;
-    unsigned long _memoryLimit;
-    size_t _timeLimit;
+    const unsigned long _memoryLimit;
+    const size_t _timeLimit;
 
     CPipe _write_pipe;
     CPipe _read_pipe;
