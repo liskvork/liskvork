@@ -7,5 +7,6 @@ int liskvork(const configuration::ConfigHandler &config, lv::Player &player1, lv
     if (config["headless"].as<bool>()) {
         LINFO("Currently running in headless mode.");
     }
+    sleep(100);
     return 0;
 }

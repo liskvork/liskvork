@@ -22,6 +22,7 @@ public:
 
 private:
     std::string _name;
+    std::string _description;
     std::string _version;
     std::string _author;
     std::string _country;
