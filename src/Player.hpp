@@ -12,6 +12,7 @@ namespace lv {
 class Player {
 public:
     Player(const std::filesystem::path &path, unsigned long memoryLimit, size_t timeLimit);
+    ~Player();
 
     NODISCARD const std::string &getName() const noexcept { return _name; }
     NODISCARD const std::string &getDescription() const noexcept { return _description; }

@@ -1,3 +1,4 @@
+#include <csignal>
 #include <exception>
 #include <iostream>
 #include <limits>
@@ -115,6 +116,16 @@ int MAIN(int argc, const char **argv)
             LFATAL("Not running in headless mode is currently not possible! Please use --headless");
             return 1;
         }
+
+        // Register sigchld handler to check for player dying
+        struct sigaction sa;
+
+        memset(&sa, 0, sizeof(sa));
+        sa.sa_handler = sigchld_handler;
+
+        sigaction(SIGCHLD, &sa, NULL);
+
+        // Player load
         LDEBUG("Loading player 1 {}", program["player1-exe"].as<std::string>());
         lv::Player player1(
             program["player1-exe"].as<std::string>(), program["player1-limits-memory"].as<unsigned long>(),

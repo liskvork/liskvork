@@ -1,3 +1,4 @@
+#include <csignal>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -51,9 +52,9 @@ Player::Player(const std::filesystem::path &path, unsigned long memoryLimit, siz
     _read_buf = std::make_unique<__gnu_cxx::stdio_filebuf<char>>(_read_pipe.read_fd(), std::ios::in);
     _stdin.rdbuf(_write_buf.get());
     _stdout.rdbuf(_read_buf.get());
-    // _stdin << "INFO timeout_match " << 0 << std::endl;
-    // _stdin << "INFO timeout_turn " << _timeLimit << std::endl;
-    // _stdin << "INFO max_memory " << _memoryLimit << std::endl;
+    _stdin << "INFO timeout_match " << 0 << std::endl;
+    _stdin << "INFO timeout_turn " << _timeLimit << std::endl;
+    _stdin << "INFO max_memory " << _memoryLimit << std::endl;
     LDEBUG("Getting about data about {}", path.string());
     _stdin << "ABOUT" << std::endl;
     const std::regex word_regex("(\\w+)=\"([^\"]*)\"");
@@ -86,4 +87,12 @@ Player::Player(const std::filesystem::path &path, unsigned long memoryLimit, siz
     }
     LDEBUG("Loaded player with name: {}", _name);
 }
+
+Player::~Player()
+{
+    // Yes I am stopping the player with a sigkill, what about it?
+    LDEBUG("Killing player {}", _name);
+    kill(_playerPID, 9);
+}
+
 }
