@@ -23,6 +23,12 @@ struct GameState {
     std::optional<Turn> lastTurn = std::nullopt;
 };
 
+enum class PlayerTurnResult {
+    NOTHING,
+    WIN,
+    LOSE, // Can only happen upon an illegal move
+};
+
 }
 
 #endif /* A7D77E16_1E0B_4A0A_AB5A_189D36542A21 */
