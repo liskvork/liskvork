@@ -1,4 +1,5 @@
 #include <csignal>
+#include <cstdio>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -8,6 +9,7 @@
 #include <sys/resource.h>
 #include <unistd.h>
 
+#include "GameState.hpp"
 #include "Player.hpp"
 #include "logging/logging.hpp"
 
@@ -54,7 +56,7 @@ Player::Player(const std::filesystem::path &path, unsigned long memoryLimit, siz
     _stdin.rdbuf(_write_buf.get());
     _stdout.rdbuf(_read_buf.get());
     _stdin << "INFO timeout_match " << 0 << std::endl;
-    _stdin << "INFO timeout_turn " << _timeLimit << std::endl;
+    // _stdin << "INFO timeout_turn " << _timeLimit << std::endl;
     _stdin << "INFO max_memory " << _memoryLimit << std::endl;
     LDEBUG("Getting about data about {}", path.string());
     _stdin << "ABOUT" << std::endl;
@@ -124,24 +126,49 @@ bool Player::initialize()
     return true;
 }
 
-bool Player::takeTurn(GameState &gameState)
+PlayerTurnResult Player::takeTurn(GameState &gameState)
 {
     const bool isFirstTurn = !gameState.lastTurn.has_value();
 
-    if (isFirstTurn)
+    if (isFirstTurn) {
+        LDEBUG("Sending \"BEGIN\" to player{}({})", _playerNumber, _name);
         _stdin << "BEGIN" << std::endl;
-    else
-        _stdin << "TURN " << gameState.lastTurn->x << "," << gameState.lastTurn->y << std::endl;
+    } else {
+        LDEBUG(
+            "Sending \"TURN {},{}\" to player{}({})", (int) gameState.lastTurn->x, (int) gameState.lastTurn->y,
+            _playerNumber, _name
+        );
+        _stdin << "TURN " << (int) gameState.lastTurn->x << "," << (int) gameState.lastTurn->y << std::endl;
+    }
     while (1) {
-        // TODO(huntears): Check remaining time
         std::string line;
         std::getline(_stdout, line);
         if (handlePotentialPrint(line))
             continue;
-        LDEBUG("Play from player{}({}): {}", _playerNumber, _name, line);
-        // TODO(huntears): Handle a play
-    }
-    return false;
+        LDEBUG("Move from player{}({}): {}", _playerNumber, _name, line);
+        int x;
+        int y;
+        int n = sscanf(line.c_str(), "%d,%d", &x, &y);
+        if (n != 2) {
+            LERROR("Impossible to parse move \"{}\", player{}({}) loses!", line, _playerNumber, _name);
+            return PlayerTurnResult::LOSE;
+        }
+        if (!(x >= 0 && x < 20) || !(y >= 0 && y < 20)) {
+            LERROR("Illegal move \"{}\" (OutOfBounds) from player{}({})!", line, _playerNumber, _name);
+            return PlayerTurnResult::LOSE;
+        }
+        if (gameState.playArea.at((uint8_t) x).at((uint8_t) y) != SquareState::EMPTY) {
+            LERROR("Illegal move \"{}\" (SpaceAlreadyOccupied) from player{}({})!", line, _playerNumber, _name);
+            return PlayerTurnResult::LOSE;
+        }
+        gameState.playArea.at((uint8_t) x).at((uint8_t) y) =
+            _playerNumber == 1 ? SquareState::PLAYER1 : SquareState::PLAYER2;
+        gameState.lastTurn = Turn((uint8_t) x, (uint8_t) y);
+        // TODO(huntears): Check remaining time
+        // TODO(huntears): Check win
+        break;
+    };
+    return PlayerTurnResult::NOTHING;
 }
 
 Player::~Player()

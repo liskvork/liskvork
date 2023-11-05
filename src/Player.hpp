@@ -52,10 +52,9 @@ public:
      * @brief Lets the player take a turn
      *
      * @param gameState The global game state
-     * @return true The player won
-     * @return false The player didn't win
+     * @return PlayerTurnResult The result of this turn
      */
-    bool takeTurn(GameState &gameState);
+    PlayerTurnResult takeTurn(GameState &gameState);
 
 private:
     std::string _name;
