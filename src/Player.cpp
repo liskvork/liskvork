@@ -131,7 +131,7 @@ namespace {
 
 bool isWin(const GameState &gameState)
 {
-    // Absolutely horrendous function, but it fast enough so idrc
+    // Absolutely horrendous function, but it's fast enough so idrc
     // Taken from https://stackoverflow.com/a/38211417 cause I couldn't be bothered :)
     const auto lastMove = gameState.lastTurn.value();
     const auto player = gameState.playArea.at(lastMove.x).at(lastMove.y);
