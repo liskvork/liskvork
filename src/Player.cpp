@@ -109,16 +109,17 @@ bool Player::initialize()
 {
     LDEBUG("Initializing player({})", _name);
     _stdin << "START 20" << std::endl;
-    do {
+    while (1) {
         std::string line;
         std::getline(_stdout, line);
         if (handlePotentialPrint(line))
             continue;
         if (line != "OK") {
-            LFATAL("Could not initialize player({})", _name);
+            LFATAL("Could not initialize player({}) -> {}", _name, line);
             return false;
         }
-    } while (0);
+        break;
+    };
     _stdin << "INFO timeout_match " << 0 << std::endl;
     _stdin << "INFO timeout_turn " << _timeLimit << std::endl;
     _stdin << "INFO max_memory " << _memoryLimit << std::endl;
