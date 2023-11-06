@@ -7,6 +7,7 @@
 #include "Player.hpp"
 #include "configuration/ConfigHandler.hpp"
 #include "liskvork.hpp"
+#include "logging/Registry.hpp"
 #include "logging/logging.hpp"
 #include "options.hpp"
 
@@ -29,7 +30,7 @@ std::optional<configuration::ConfigHandler> initArgs(int argc, const char **argv
         .valueFromArgument("--headless")
         .valueFromEnvironmentVariable("LV_HEADLESS")
         .possibleValues(true, false)
-        .defaultValue(false)
+        .defaultValue(true)
         .implicit();
 
     program->add("player1-exe")
@@ -77,6 +78,24 @@ std::optional<configuration::ConfigHandler> initArgs(int argc, const char **argv
         .valueFromEnvironmentVariable("LV_PLAYER2_LIMITS_TIME")
         .defaultValue(defaultTimeLimit)
         .inRange(std::numeric_limits<size_t>().min(), std::numeric_limits<size_t>().max());
+
+    program->add("debug-enable")
+        .help("Enables debug messages")
+        .valueFromConfig("debug", "enable")
+        .valueFromArgument("--debug-enable")
+        .valueFromEnvironmentVariable("LV_DEBUG_ENABLE")
+        .possibleValues(true, false)
+        .defaultValue(false)
+        .implicit();
+
+    program->add("debug-board")
+        .help("Enables board display")
+        .valueFromConfig("debug", "board")
+        .valueFromArgument("--debug-board")
+        .valueFromEnvironmentVariable("LV_DEBUG_BOARD")
+        .possibleValues(true, false)
+        .defaultValue(false)
+        .implicit();
     // clang-format on
 
     try {
@@ -107,14 +126,20 @@ int MAIN(int argc, const char **argv)
 {
     auto program_opt = initArgs(argc, argv);
     if (!program_opt.has_value()) {
-        return 1;
+        return 3;
     }
     try {
         auto &program = program_opt.value();
 
         if (!program["headless"].as<bool>()) {
             LFATAL("Not running in headless mode is currently not possible! Please use --headless");
-            return 1;
+            return 3;
+        }
+
+        LINFO("Starting {}{}", PROGRAM_NAME, PROGRAM_VERSION);
+
+        if (program["debug-enable"].as<bool>()) {
+            logging::setLevel(logging::Registry::LogLevel::debug);
         }
 
         // Register sigchld handler to check for player dying
@@ -140,7 +165,7 @@ int MAIN(int argc, const char **argv)
     } catch (const std::exception &e) {
         LFATAL("Error at root!");
         LFATAL(e.what());
-        return 1;
+        return 3;
     }
     return 0;
 }

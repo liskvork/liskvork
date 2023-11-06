@@ -126,6 +126,55 @@ bool Player::initialize()
     return true;
 }
 
+namespace {
+
+bool isWin(const GameState &gameState)
+{
+    // Absolutely horrendous function, but it fast enough so idrc
+    // Taken from https://stackoverflow.com/a/38211417 cause I couldn't be bothered :)
+    const auto lastMove = gameState.lastTurn.value();
+    const auto player = gameState.playArea.at(lastMove.x).at(lastMove.y);
+    const auto &board = gameState.playArea;
+
+    // horizontalCheck
+    for (uint8_t j = 0; j < 20 - 4; j++) {
+        for (uint8_t i = 0; i < 20; i++) {
+            if (board[i][j] == player && board[i][j + 1] == player && board[i][j + 2] == player &&
+                board[i][j + 3] == player && board[i][j + 4] == player) {
+                return true;
+            }
+        }
+    }
+    // verticalCheck
+    for (uint8_t i = 0; i < 20 - 4; i++) {
+        for (uint8_t j = 0; j < 20; j++) {
+            if (board[i][j] == player && board[i + 1][j] == player && board[i + 2][j] == player &&
+                board[i + 3][j] == player && board[i + 4][j] == player) {
+                return true;
+            }
+        }
+    }
+    // ascendingDiagonalCheck
+    for (uint8_t i = 4; i < 20; i++) {
+        for (uint8_t j = 0; j < 20 - 4; j++) {
+            if (board[i][j] == player && board[i - 1][j + 1] == player && board[i - 2][j + 2] == player &&
+                board[i - 3][j + 3] == player && board[i - 4][j + 4] == player)
+                return true;
+        }
+    }
+    // descendingDiagonalCheck
+    for (uint8_t i = 4; i < 20; i++) {
+        for (uint8_t j = 4; j < 20; j++) {
+            if (board[i][j] == player && board[i - 1][j - 1] == player && board[i - 2][j - 2] == player &&
+                board[i - 3][j - 3] == player && board[i - 4][j - 4] == player)
+                return true;
+        }
+    }
+    return false;
+}
+
+}
+
 PlayerTurnResult Player::takeTurn(GameState &gameState)
 {
     const bool isFirstTurn = !gameState.lastTurn.has_value();
@@ -165,10 +214,10 @@ PlayerTurnResult Player::takeTurn(GameState &gameState)
             _playerNumber == 1 ? SquareState::PLAYER1 : SquareState::PLAYER2;
         gameState.lastTurn = Turn((uint8_t) x, (uint8_t) y);
         // TODO(huntears): Check remaining time
-        // TODO(huntears): Check win
-        break;
+        return isWin(gameState) ? PlayerTurnResult::WIN : PlayerTurnResult::NOTHING;
     };
-    return PlayerTurnResult::NOTHING;
+    // Literally impossible to reach
+    __builtin_unreachable();
 }
 
 Player::~Player()
