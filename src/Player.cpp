@@ -1,3 +1,4 @@
+#include <chrono>
 #include <csignal>
 #include <cstdio>
 #include <filesystem>
@@ -192,6 +193,7 @@ PlayerTurnResult Player::takeTurn(GameState &gameState)
         );
         _stdin << "TURN " << (int) gameState.lastTurn->x << "," << (int) gameState.lastTurn->y << std::endl;
     }
+    const auto startTurn = std::chrono::high_resolution_clock::now();
     while (1) {
         std::string line;
         std::getline(_stdout, line);
@@ -211,6 +213,15 @@ PlayerTurnResult Player::takeTurn(GameState &gameState)
         }
         if (gameState.playArea.at((uint8_t) x).at((uint8_t) y) != SquareState::EMPTY) {
             LERROR("Illegal move \"{}\" (SpaceAlreadyOccupied) from player{}({})!", line, _playerNumber, _name);
+            return PlayerTurnResult::LOSE;
+        }
+        const auto endTurn = std::chrono::high_resolution_clock::now();
+        const auto turnDuration = endTurn - startTurn;
+        const auto turnDurationMilliseconds =
+            std::chrono::duration_cast<std::chrono::milliseconds>(turnDuration).count();
+        LDEBUG("Player{}({})'s turn took {}ms/{}ms", _playerNumber, _name, turnDurationMilliseconds, _timeLimit);
+        if (_timeLimit && (size_t) turnDurationMilliseconds > _timeLimit) {
+            LERROR("Player{}({}) took too long to take its turn!", _playerNumber, _name);
             return PlayerTurnResult::LOSE;
         }
         gameState.playArea.at((uint8_t) x).at((uint8_t) y) =
