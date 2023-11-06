@@ -56,6 +56,8 @@ public:
      */
     PlayerTurnResult takeTurn(GameState &gameState);
 
+    void stop() noexcept { _stopped = true; }
+
 private:
     std::string _name;
     std::string _description;
@@ -75,6 +77,7 @@ private:
     std::unique_ptr<__gnu_cxx::stdio_filebuf<char>> _read_buf = nullptr;
     std::ostream _stdin;
     std::istream _stdout;
+    bool _stopped = false;
 };
 
 }

@@ -179,6 +179,8 @@ PlayerTurnResult Player::takeTurn(GameState &gameState)
 {
     const bool isFirstTurn = !gameState.lastTurn.has_value();
 
+    if (_stopped)
+        return PlayerTurnResult::LOSE;
     if (isFirstTurn) {
         LDEBUG("Sending \"BEGIN\" to player{}({})", _playerNumber, _name);
         _stdin << "BEGIN" << std::endl;

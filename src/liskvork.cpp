@@ -13,8 +13,9 @@
 
 namespace {
 
-std::thread gameLoopThread;
 bool gameLoopRunning = true;
+lv::Player *player1Ptr = nullptr;
+lv::Player *player2Ptr = nullptr;
 
 std::string stateStr(lv::SquareState state)
 {
@@ -109,24 +110,36 @@ void sigchld_handler(UNUSED int sig)
     int status;
 
     while ((p = waitpid(-1, &status, WNOHANG)) != -1) {
-        if (p == 0)
+        if (p == 0) // No idea why it can loop on this infinitely but aight
             break;
-        // TODO(huntears): Properly handle the death of a player
-        // Currently commented because it causes a crash at the end of the program
-        // LFATAL("Player with PID {} died! (Is that a crash?)", p);
+        if (gameLoopRunning) {
+            int numberPlayer = 0;
+            if (p == player1Ptr->getPID()) {
+                numberPlayer = 1;
+                player1Ptr->stop();
+            } else if (p == player2Ptr->getPID()) {
+                numberPlayer = 2;
+                player2Ptr->stop();
+            } else
+                __builtin_unreachable();
+            LFATAL("Player{} with PID {} died! (Is that a crash?)", numberPlayer, p);
+        }
     }
 }
 
 int liskvork(const configuration::ConfigHandler &config, lv::Player &player1, lv::Player &player2)
 {
+    bool match_ended = false;
+    int match_res = 0;
     LINFO("Starting game with player1({}) and player2({}).", player1.getName(), player2.getName());
+    player1Ptr = &player1;
+    player2Ptr = &player2;
     if (config["headless"].as<bool>()) {
         LINFO("Currently running in headless mode.");
     }
     if (!player1.initialize() || !player2.initialize())
         return 3;
-    int match_res = 0;
-    bool match_ended = false;
+    std::thread gameLoopThread;
     gameLoopThread = std::thread([&player1, &player2, &match_res, &match_ended, &config]() {
         match_res = gameLoop(player1, player2, config);
         match_ended = true;
