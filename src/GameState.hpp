@@ -16,6 +16,13 @@ enum class SquareState {
 struct Turn {
     uint8_t x;
     uint8_t y;
+
+public:
+    Turn(uint8_t x, uint8_t y):
+        x(x),
+        y(y)
+    {
+    }
 };
 
 struct GameState {
