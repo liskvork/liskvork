@@ -14,8 +14,8 @@ if (USE_CLANG)
 endif()
 
 project(liskvork
-    VERSION 0.1.0
-    DESCRIPTION ""
+    VERSION 0.1.1
+    DESCRIPTION "Linux native gomoku manager"
     HOMEPAGE_URL "https://gitlab.com/huntears/liskvork"
     LANGUAGES CXX
 )
