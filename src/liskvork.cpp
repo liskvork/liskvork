@@ -39,24 +39,24 @@ void printGameBoard(lv::GameState &gameState)
         if (y < 10) {
             LDEBUG(
                 "{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |", y,
-                stateStr(board.at(0).at(y)), stateStr(board.at(0).at(y)), stateStr(board.at(1).at(y)),
-                stateStr(board.at(2).at(y)), stateStr(board.at(3).at(y)), stateStr(board.at(4).at(y)),
-                stateStr(board.at(5).at(y)), stateStr(board.at(6).at(y)), stateStr(board.at(7).at(y)),
-                stateStr(board.at(8).at(y)), stateStr(board.at(9).at(y)), stateStr(board.at(10).at(y)),
-                stateStr(board.at(11).at(y)), stateStr(board.at(12).at(y)), stateStr(board.at(13).at(y)),
-                stateStr(board.at(14).at(y)), stateStr(board.at(15).at(y)), stateStr(board.at(16).at(y)),
-                stateStr(board.at(17).at(y)), stateStr(board.at(18).at(y)), stateStr(board.at(19).at(y))
+                stateStr(board.at(0).at(y)), stateStr(board.at(1).at(y)), stateStr(board.at(2).at(y)),
+                stateStr(board.at(3).at(y)), stateStr(board.at(4).at(y)), stateStr(board.at(5).at(y)),
+                stateStr(board.at(6).at(y)), stateStr(board.at(7).at(y)), stateStr(board.at(8).at(y)),
+                stateStr(board.at(9).at(y)), stateStr(board.at(10).at(y)), stateStr(board.at(11).at(y)),
+                stateStr(board.at(12).at(y)), stateStr(board.at(13).at(y)), stateStr(board.at(14).at(y)),
+                stateStr(board.at(15).at(y)), stateStr(board.at(16).at(y)), stateStr(board.at(17).at(y)),
+                stateStr(board.at(18).at(y)), stateStr(board.at(19).at(y))
             );
         } else {
             LDEBUG(
                 "{}|{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |{} |", y,
-                stateStr(board.at(0).at(y)), stateStr(board.at(0).at(y)), stateStr(board.at(1).at(y)),
-                stateStr(board.at(2).at(y)), stateStr(board.at(3).at(y)), stateStr(board.at(4).at(y)),
-                stateStr(board.at(5).at(y)), stateStr(board.at(6).at(y)), stateStr(board.at(7).at(y)),
-                stateStr(board.at(8).at(y)), stateStr(board.at(9).at(y)), stateStr(board.at(10).at(y)),
-                stateStr(board.at(11).at(y)), stateStr(board.at(12).at(y)), stateStr(board.at(13).at(y)),
-                stateStr(board.at(14).at(y)), stateStr(board.at(15).at(y)), stateStr(board.at(16).at(y)),
-                stateStr(board.at(17).at(y)), stateStr(board.at(18).at(y)), stateStr(board.at(19).at(y))
+                stateStr(board.at(0).at(y)), stateStr(board.at(1).at(y)), stateStr(board.at(2).at(y)),
+                stateStr(board.at(3).at(y)), stateStr(board.at(4).at(y)), stateStr(board.at(5).at(y)),
+                stateStr(board.at(6).at(y)), stateStr(board.at(7).at(y)), stateStr(board.at(8).at(y)),
+                stateStr(board.at(9).at(y)), stateStr(board.at(10).at(y)), stateStr(board.at(11).at(y)),
+                stateStr(board.at(12).at(y)), stateStr(board.at(13).at(y)), stateStr(board.at(14).at(y)),
+                stateStr(board.at(15).at(y)), stateStr(board.at(16).at(y)), stateStr(board.at(17).at(y)),
+                stateStr(board.at(18).at(y)), stateStr(board.at(19).at(y))
             );
         }
     }
