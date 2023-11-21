@@ -239,7 +239,7 @@ PlayerTurnResult Player::takeTurn(GameState &gameState)
 Player::~Player()
 {
     // Yes I am stopping the player with a sigkill, what about it?
-    LDEBUG("Killing player {}", _name);
+    LDEBUG("Stoping player {}...", _name);
     _stdin << "END" << std::endl;
     int status;
     bool ok = true;
@@ -257,6 +257,7 @@ Player::~Player()
     }
     if (!ok || !WIFEXITED(status) || WIFSIGNALED(status)) {
         kill(_playerPID, 9);
+        LWARN("Player {} could not be stopped! Killed!", _name);
     }
 }
 
