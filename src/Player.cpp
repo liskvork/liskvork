@@ -1,6 +1,7 @@
 #include <chrono>
 #include <csignal>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -9,6 +10,7 @@
 #include <string>
 #include <sys/resource.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include "GameState.hpp"
 #include "Player.hpp"
@@ -238,7 +240,24 @@ Player::~Player()
 {
     // Yes I am stopping the player with a sigkill, what about it?
     LDEBUG("Killing player {}", _name);
-    kill(_playerPID, 9);
+    _stdin << "END" << std::endl;
+    int status;
+    bool ok = true;
+    int iterration = 0;
+    while (iterration < 5) {
+        if (waitpid(_playerPID, &status, WNOHANG) == -1) {
+            ok = false;
+            break;
+        }
+        if (WIFEXITED(status) || WIFSIGNALED(status)) {
+            break;
+        }
+        usleep(100);
+        iterration++;
+    }
+    if (!ok || !WIFEXITED(status) || WIFSIGNALED(status)) {
+        kill(_playerPID, 9);
+    }
 }
 
 }
