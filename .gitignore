@@ -1,0 +1,16 @@
+# Object files
+*.o
+
+# End binaries
+optimized
+simple
+
+# Coding style checker
+coding-style.sh
+reports/
+
+# Binary
+build
+
+# Cache folder
+.cache
