@@ -1,7 +1,14 @@
+#include <cstdlib>
 #include <iostream>
 
-auto main() -> int
+#ifdef UNIT_TESTS
+#define MAIN definitely_not_main
+#else
+#define MAIN main
+#endif
+
+auto MAIN() -> int
 {
     std::cout << "Hello, World!" << std::endl;
-    return 0;
+    return EXIT_SUCCESS;
 }
