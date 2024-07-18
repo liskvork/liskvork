@@ -1,8 +1,49 @@
-# Binary
-build*
+# Prerequisites
+*.d
 
-# Cache folder
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# CLion
+.idea
+
+# clangd
 .cache
 
-# AI
-ais
+# Build artifacts
+glados
+liskvork
+
+build
+build_tests
+compile_commands.json
+
+# Nix
+result
