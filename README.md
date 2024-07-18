@@ -25,7 +25,7 @@ TBD
 #### Step
 
 ```sh
-$ make -j `nproc --exclude 1` # The -j option is here to speed-up the compilation
+make -j `nproc --exclude 1` # The -j option is here to speed-up the compilation
 ```
 
 ## Installing
@@ -48,14 +48,14 @@ any access to a server with those architectures to maintain liskvork.
 Just launch liskvork like this:
 
 ```sh
-$ liskvork
+liskvork
 ```
 
 ### From source build
 
 ```sh
 # From the root of the repository once built
-$ ./liskvork
+./liskvork
 ```
 
 ### Docker
