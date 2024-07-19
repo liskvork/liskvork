@@ -1,0 +1,9 @@
+build*
+ais
+.cache
+Dockerfile
+.gitignore
+.git/
+**/*.md
+.github
+LICENSE
