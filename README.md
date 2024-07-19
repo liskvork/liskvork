@@ -1,6 +1,6 @@
 # liskvork
 
-Linux native piskvork reimplementation for Epitech students.
+Linux native piskvork reimplementation.
 
 It should also support Mac (Intel and Apple Silicon) but if there are problems
 please open an issue
@@ -10,7 +10,9 @@ please open an issue
 
 ### Docker
 
-TBD
+```sh
+docker build . -t liskvork:local
+```
 
 ### No docker
 
@@ -25,7 +27,7 @@ TBD
 #### Step
 
 ```sh
-make -j `nproc --exclude 1` # The -j option is here to speed-up the compilation
+make -j `nproc --ignore=1` # The -j option is here to speed-up the compilation
 ```
 
 ## Installing
@@ -60,7 +62,10 @@ liskvork
 
 ### Docker
 
-TBD
+```sh
+# Once compiled with docker
+docker run liskvork:local
+```
 
 ## Configuration
 
