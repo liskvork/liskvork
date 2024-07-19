@@ -49,6 +49,10 @@ ifeq ($(NATIVE), 1)
 CXXFLAGS += -march=native -mtune=native
 endif
 
+ifeq ($(STATIC), 1)
+LDFLAGS += -static
+endif
+
 ifeq ($(DEBUG), 1)
 CXXFLAGS += -Og -ggdb
 else
