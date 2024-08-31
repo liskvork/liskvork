@@ -51,8 +51,8 @@
 
         name = "liskvork";
         inputsFrom = pkgs.lib.attrsets.attrValues packages;
-        packages = [
-          zig
+        packages = with pkgs; [
+          zls
         ];
       };
 
