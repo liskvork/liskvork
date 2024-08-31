@@ -7,29 +7,20 @@ on:
   pull_request:
 
 jobs:
-  check_linux_build:
+  nix_build:
     runs-on: ubuntu-latest
     steps:
-      - run: sudo apt install make gcc
       - uses: actions/checkout@v4
-      - run: make
-        env:
-          DEBUG: 0
-          ASAN: 0
-          ANALYZER: 0
-          LTO: 1
-          NATIVE: 0
+      - uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - run: nix build
 
-  check_linux_test:
+  nix_flake_check:
     runs-on: ubuntu-latest
-    needs: check_linux_build
     steps:
-      - run: sudo apt install make gcc libcriterion-dev
       - uses: actions/checkout@v4
-      - run: make tests_run
-        env:
-          DEBUG: 1
-          ASAN: 1
-          ANALYZER: 1
-          LTO: 0
-          NATIVE: 0
+      - uses: cachix/install-nix-action@v27
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - run: nix flake check
