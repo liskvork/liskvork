@@ -2,46 +2,34 @@
 
 Linux native piskvork reimplementation.
 
-It should also support Mac (Intel and Apple Silicon) but if there are problems
-please open an issue
-[here](https://github.com/Epitech/B-AIA-500_liskvork/issues).
+It should also support Mac (Intel and Apple Silicon) and Windows but if there
+are problems please open an issue
+[here](https://github.com/Epitech/B-AIA-500_liskvork/issues). Those other
+platforms are not a priority but I while give support for them.
 
 ## Building from source
 
 ### Docker
 
 ```sh
-docker build . -t liskvork:local
+VERSION=1.0.0 docker build . --build-arg BUILD_VERSION=${VERSION} -t liskvork:${VERSION}
 ```
 
 ### No docker
 
 #### Dependencies
 
-- gcc7* (Any c++17 compliant compiler should work but it is not guarranted as we do not code strictly to the standard)
-- gnumake (Build system, other make versions might work but have not been tested)
-
-\* gcc7 is the lowest version that should work with this codebase but it has not been tested yet, a higher compiler version will always be recommended for optimization reasons. See the gcc c++17 feature matrix
-[here](https://gcc.gnu.org/projects/cxx-status.html#cxx17).
+- zig 0.13.0 (May work with older or newer versions but has not been tested)
 
 #### Step
 
 ```sh
-make -j `nproc --ignore=1` # The -j option is here to speed-up the compilation
+zig build -Doptimize=ReleaseSafe
 ```
 
 ## Installing
 
 TBD
-
-### Non x86 systems
-
-You currently need to build from source if you want to use liskvork on a non
-x86 system, as I currently do not have access to any servers to build liskvork
-other than x86.
-
-If you want ARM (Or even RISC-V) builds to happen then I would gladly accept
-any access to a server with those architectures to maintain liskvork.
 
 ## Launching liskvork
 
@@ -57,14 +45,14 @@ liskvork
 
 ```sh
 # From the root of the repository once built
-./liskvork
+./zig-out/bin/liskvork
 ```
 
 ### Docker
 
 ```sh
 # Once compiled with docker
-docker run liskvork:local
+VERSION=1.0.0 docker run liskvork:${VERSION}
 ```
 
 ## Configuration

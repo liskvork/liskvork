@@ -2,39 +2,84 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+
+    pre-commit-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
     self,
     nixpkgs,
     flake-utils,
+    pre-commit-hooks,
   }:
-    flake-utils.lib.eachSystem ["x86_64-linux"] (system: let
+    flake-utils.lib.eachSystem [
+      "x86_64-linux"
+      "x86_64-darwin"
+      "aarch64-darwin"
+      "aarch64-linux"
+    ]
+    (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-    in {
+      zig = pkgs.zig_0_13;
+    in rec {
+      formatter = pkgs.alejandra;
+
+      checks = let
+        hooks = {
+          alejandra.enable = true;
+          check-merge-conflicts.enable = true;
+          check-shebang-scripts-are-executable.enable = true;
+          check-added-large-files.enable = true;
+          zig-fmt = {
+            enable = true;
+            entry = "${zig}/bin/zig fmt --check .";
+            files = "\\.z(ig|on)$";
+          };
+        };
+      in {
+        pre-commit-check = pre-commit-hooks.lib.${system}.run {
+          inherit hooks;
+          src = ./.;
+        };
+      };
+
+      devShells.default = pkgs.mkShell {
+        inherit (self.checks.${system}.pre-commit-check) shellHook;
+
+        name = "liskvork";
+        inputsFrom = pkgs.lib.attrsets.attrValues packages;
+        packages = [
+          zig
+        ];
+      };
+
       packages = rec {
         liskvork = default;
-        default = pkgs.stdenvNoCC.mkDerivation rec {
+        default = pkgs.stdenv.mkDerivation {
           name = "liskvork";
 
-          src = ./.;
-          nativeBuildInputs = with pkgs; [
-            gcc
-            gnumake
+          XDG_CACHE_HOME = "${placeholder "out"}";
+
+          src = pkgs.lib.cleanSource ./.;
+          buildInputs = [
+            zig
           ];
 
-          checkInputs = with pkgs; [
-            criterion
-          ];
+          buildPhase = ''
+            zig build -Doptimize=ReleaseSafe
+          '';
 
           doCheck = true;
           checkPhase = ''
-            make tests_run
+            zig build test -Doptimize=ReleaseSafe
           '';
 
           installPhase = ''
-            mkdir -p $out/bin
-            install -D ${name} $out/bin/${name} --mode 0755
+            zig build install --prefix $out -Doptimize=ReleaseSafe
+            rm -rf $out/zig # remove cache
           '';
         };
       };

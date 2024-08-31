@@ -1,49 +1,9 @@
-# Prerequisites
-*.d
+# This should be all that's needed for zig
+.zig-cache/
+zig-out/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# CLion
-.idea
-
-# clangd
-.cache
-
-# Build artifacts
-glados
-liskvork
-
-build
-build_tests
-compile_commands.json
-
-# Nix
+# But of course there's nix
 result
+.direnv
+.envrc
+.pre-commit-config.yaml

@@ -1,29 +1,20 @@
-FROM registry.fedoraproject.org/fedora-minimal:40 as builder
+FROM alpine:edge as builder
 
-RUN microdnf -y --refresh upgrade
+ARG BUILD_VERSION=0.0.0
 
-RUN microdnf -y install     \
-    --setopt=tsflags=nodocs \
-    --setopt=deltarpm=false \
-    gcc-c++                 \
-    libstdc++-static        \
-    glibc-static            \
-    make
+RUN apk add --no-cache "zig=~0.13"
+
+WORKDIR /work
 
 COPY . .
 
-ENV DEBUG=0
-ENV ASAN=0
-ENV ANALYZER=0
-ENV LTO=1
-ENV NATIVE=0
-ENV STATIC=1
-
-RUN make -j `nproc --ignore=1`
+RUN zig build -Doptimize=ReleaseSafe -Dversion=${BUILD_VERSION} --summary all
 
 FROM scratch
 LABEL maintainer="emneo <emneo@kreog.com>"
 
-COPY --from=builder liskvork .
+WORKDIR /
+
+COPY --from=builder /work/zig-out/bin/liskvork .
 
 ENTRYPOINT ["/liskvork"]
