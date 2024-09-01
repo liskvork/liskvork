@@ -31,7 +31,7 @@ pub fn build(b: *std.Build) !void {
     const std_target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const version = b.option([]const u8, "version", "application version string") orelse "0.0.0";
+    const version = b.option([]const u8, "version", "application version string") orelse "0.0.0-dev";
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
