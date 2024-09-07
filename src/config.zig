@@ -1,15 +1,41 @@
 const ini = @import("ini");
 const std = @import("std");
 
-pub const ConfigError = error{ UnknownKey, MissingKey };
-
+// Add to this structure to automatically add to the config
 pub const config = struct {
     network_port: u16,
 };
 
-const tmp_config = struct {
-    network_port: ?u16 = null,
+pub const ConfigError = error{
+    UnknownKey,
+    MissingKey,
 };
+
+fn make_opt_struct(comptime in: type) type {
+    if (@typeInfo(in) != .Struct) @compileError("Type must be a struct type.");
+    var fields: [std.meta.fields(in).len]std.builtin.Type.StructField = undefined;
+    for (std.meta.fields(in), 0..) |t, i| {
+        const fieldType = @Type(.{ .Optional = .{ .child = t.type } });
+        const fieldName: [:0]const u8 = t.name[0..];
+        fields[i] = .{
+            .name = fieldName,
+            .type = fieldType,
+            .default_value = &@as(fieldType, null),
+            .is_comptime = false,
+            .alignment = 0,
+        };
+    }
+    return @Type(.{
+        .Struct = .{
+            .layout = .auto,
+            .fields = fields[0..],
+            .decls = &[_]std.builtin.Type.Declaration{},
+            .is_tuple = false,
+        },
+    });
+}
+
+const tmp_config = make_opt_struct(config);
 
 const ini_field = struct {
     const Self = @This();
@@ -47,7 +73,7 @@ fn map_opt_struct_to_struct(opt_stc: type, stc: type, from: *const opt_stc) stc 
         if (target_type != current_target_type)
             @compileError("Field " ++ f.name ++ " has mismatched types " ++ @typeName(target_type) ++ " != " ++ @typeName(current_target_type));
         if (@field(from, f.name) == null)
-            @panic("Field " ++ f.name ++ " is null");
+            @panic(f.name ++ " is missing from config");
         @field(to, f.name) = @field(from, f.name).?;
     }
     return to;
