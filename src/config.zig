@@ -3,12 +3,13 @@ const std = @import("std");
 
 // Add to this structure to automatically add to the config
 pub const config = struct {
-    network_port: u16,
+    network_bind: std.net.Address,
 };
 
 pub const ConfigError = error{
     UnknownKey,
     MissingKey,
+    BadKey,
 };
 
 fn make_opt_struct(comptime in: type) type {
@@ -79,12 +80,22 @@ fn map_opt_struct_to_struct(opt_stc: type, stc: type, from: *const opt_stc) stc 
     return to;
 }
 
+// TODO: Handle ipv6
+fn parse_full_ip(ip: []const u8) !std.net.Address {
+    const colon = std.mem.indexOf(u8, ip, ":") orelse return ConfigError.BadKey;
+    const port_slice = ip[colon + 1 ..];
+    const port = try std.fmt.parseInt(u16, port_slice, 10);
+    const ip_slice = ip[0..colon];
+    return try std.net.Address.parseIp(ip_slice, port);
+}
+
 fn map_value(kv: ini_field, conf: *tmp_config) !void {
     inline for (std.meta.fields(@TypeOf(conf.*))) |f| {
         if (std.mem.eql(u8, f.name, kv.full_name)) {
             const target_type = @typeInfo(f.type).Optional.child;
             @field(conf, f.name) = switch (target_type) {
                 u16, u32, u64, i16, i32, i64 => try std.fmt.parseInt(target_type, kv.value, 0),
+                std.net.Address => try parse_full_ip(kv.value),
                 else => @panic("You probably need to implement another type :3"),
             };
             return;
