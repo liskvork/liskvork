@@ -1,0 +1,19 @@
+.{
+    .name = "liskvork",
+    .version = "0.1.0-dev",
+    .minimum_zig_version = "0.13.0",
+
+    .dependencies = .{
+        .ini = .{
+            .url = "https://github.com/ziglibs/ini/archive/e18d36665905c1e7ba0c1ce3e8780076b33e3002.tar.gz",
+            .hash = "1220b0979ea9891fa4aeb85748fc42bc4b24039d9c99a4d65d893fb1c83e921efad8",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "LICENSE",
+        "README.md",
+    },
+}
