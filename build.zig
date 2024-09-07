@@ -60,9 +60,11 @@ pub fn build(b: *std.Build) !void {
                 .optimize = optimize,
                 .root_source_file = b.path("src/main.zig"),
             });
+            const pkg = b.dependency("ini", .{ .target = target, .optimize = optimize });
+            liskvork.root_module.addImport("ini", pkg.module("ini"));
             const options = b.addOptions();
             options.addOption([]const u8, "version", version);
-            liskvork.root_module.addOptions("config", options);
+            liskvork.root_module.addOptions("build_config", options);
             b.installArtifact(liskvork);
         }
     }
@@ -74,9 +76,12 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = b.path("src/main.zig"),
     });
 
+    const pkg = b.dependency("ini", .{ .target = std_target, .optimize = optimize });
+    liskvork.root_module.addImport("ini", pkg.module("ini"));
+
     const options = b.addOptions();
     options.addOption([]const u8, "version", version);
-    liskvork.root_module.addOptions("config", options);
+    liskvork.root_module.addOptions("build_config", options);
 
     b.installArtifact(liskvork);
 
