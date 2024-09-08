@@ -26,10 +26,10 @@ pub fn main() !void {
     });
     defer logz.deinit();
 
-    std.debug.print("Launching liskvork version {any}\n", .{semver});
+    logz.info().ctx("Launching liskvork").stringSafe("version", build_config.version).log();
 
     const conf = try config.parse("config.ini", allocator);
-    std.debug.print("Got conf: {any}\n", .{conf});
+    _ = conf;
 }
 
 test {
