@@ -15,8 +15,8 @@ jobs:
       - uses: goto-bus-stop/setup-zig@v2
         with:
           version: 0.13.0
-      - run: zig build -Doptimize=ReleaseSafe -Dbuild_all=true -Dversion=0.1.0-nightly --summary all
-      - name: Archive production artifacts
+      - run: zig build -Doptimize=ReleaseSafe -Dbuild_all -Dversion=0.1.0-nightly --summary all
+      - name: Archive build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: binaries
