@@ -14,3 +14,7 @@ pub fn main() !void {
     const conf = try config.parse("config.ini", allocator);
     std.debug.print("Got conf: {any}\n", .{conf});
 }
+
+test {
+    std.testing.refAllDecls(@This());
+}
