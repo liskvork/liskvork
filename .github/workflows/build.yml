@@ -20,7 +20,8 @@ jobs:
         with:
           name: binaries
           path: ./zig-out/bin/liskvork-*
-      - uses: marvinpinto/action-automatic-releases@latest
+      - if: success() && github.ref == 'refs/heads/master'
+        uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           title: Development build
