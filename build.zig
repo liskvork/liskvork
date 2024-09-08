@@ -27,63 +27,111 @@ const targets = [_]std.Target.Query{
     },
 };
 
-pub fn build(b: *std.Build) !void {
-    const std_target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
+const default_version_string = "0.1.0-dev";
 
-    const version = b.option([]const u8, "version", "application version string") orelse "0.0.0-dev";
+const default_bin_name = "liskvork";
+
+const build_options = struct {
+    version: []const u8,
+    build_all: bool,
+    bin_name: []const u8,
+};
+
+fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, opt: build_options) void {
+    const pkg = b.dependency("ini", .{ .target = target, .optimize = optimize });
+    const options = b.addOptions();
+    options.addOption([]const u8, "version", opt.version);
+
+    bin.root_module.addOptions("build_config", options);
+    bin.root_module.addImport("ini", pkg.module("ini"));
+}
+
+fn configure_tests(b: *std.Build, opt: build_options, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) *std.Build.Step.Compile {
+    const unit_tests = b.addTest(.{
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    add_options_to_bin(b, unit_tests, target, optimize, opt);
+    return unit_tests;
+}
+
+fn create_binary_name(opt: build_options, target: std.Build.ResolvedTarget, allocator: std.mem.Allocator) ![]const u8 {
+    return try std.fmt.allocPrint(
+        allocator,
+        "{s}-{s}-{s}",
+        .{
+            opt.bin_name,
+            opt.version,
+            try target.result.linuxTriple(allocator),
+        },
+    );
+}
+
+fn configure_binary(b: *std.Build, opt: build_options, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, allocator: std.mem.Allocator) !*std.Build.Step.Compile {
+    const final_bin_name = try create_binary_name(
+        opt,
+        target,
+        allocator,
+    );
+    const bin = b.addExecutable(.{
+        .name = final_bin_name,
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/main.zig"),
+    });
+    add_options_to_bin(b, bin, target, optimize, opt);
+    b.installArtifact(bin);
+    return bin;
+}
+
+fn set_build_options(b: *std.Build) build_options {
+    return .{
+        .version = b.option(
+            []const u8,
+            "version",
+            "application version string",
+        ) orelse default_version_string,
+        .build_all = b.option(
+            bool,
+            "build_all",
+            "Build on all platforms possible",
+        ) orelse false,
+        .bin_name = b.option(
+            []const u8,
+            "bin_name",
+            "base bin name",
+        ) orelse "liskvork",
+    };
+}
+
+pub fn build(b: *std.Build) !void {
+    const native_target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
 
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    const build_all = b.option(
-        bool,
-        "build_all",
-        "Whether to build all platforms possible",
-    ) orelse false;
+    const opt = set_build_options(b);
 
-    if (build_all) {
-        for (targets) |target| {
-            const exe_name = try std.fmt.allocPrint(
+    if (opt.build_all) {
+        for (targets) |target|
+            _ = try configure_binary(
+                b,
+                opt,
+                std.Build.resolveTargetQuery(b, target),
+                optimize,
                 allocator,
-                "{s}-{s}-{s}",
-                .{
-                    "liskvork",
-                    version,
-                    try b.resolveTargetQuery(target).result.linuxTriple(allocator),
-                },
             );
-            const liskvork = b.addExecutable(.{
-                .name = exe_name,
-                .target = b.resolveTargetQuery(target),
-                .optimize = optimize,
-                .root_source_file = b.path("src/main.zig"),
-            });
-            const pkg = b.dependency("ini", .{ .target = target, .optimize = optimize });
-            liskvork.root_module.addImport("ini", pkg.module("ini"));
-            const options = b.addOptions();
-            options.addOption([]const u8, "version", version);
-            liskvork.root_module.addOptions("build_config", options);
-            b.installArtifact(liskvork);
-        }
     }
-
-    const liskvork = b.addExecutable(.{
-        .name = "liskvork",
-        .target = std_target,
-        .optimize = optimize,
-        .root_source_file = b.path("src/main.zig"),
-    });
-
-    const pkg = b.dependency("ini", .{ .target = std_target, .optimize = optimize });
-    liskvork.root_module.addImport("ini", pkg.module("ini"));
-
-    const options = b.addOptions();
-    options.addOption([]const u8, "version", version);
-    liskvork.root_module.addOptions("build_config", options);
-
-    b.installArtifact(liskvork);
+    const liskvork = try configure_binary(
+        b,
+        opt,
+        native_target,
+        optimize,
+        allocator,
+    );
 
     const run_liskvork = b.addRunArtifact(liskvork);
 
@@ -92,13 +140,7 @@ pub fn build(b: *std.Build) !void {
 
     const test_step = b.step("test", "Run unit tests");
 
-    const unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/main.zig"),
-        .target = std_target,
-        .optimize = optimize,
-    });
-    unit_tests.root_module.addOptions("build_config", options);
-    unit_tests.root_module.addImport("ini", pkg.module("ini"));
+    const unit_tests = configure_tests(b, opt, native_target, optimize);
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
     test_step.dependOn(&run_unit_tests.step);
