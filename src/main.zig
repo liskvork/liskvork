@@ -12,7 +12,11 @@ const is_debug_build = builtin.mode == std.builtin.OptimizeMode.Debug;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer if (gpa.deinit() != .ok) @panic("memory leaked");
+    defer {
+        // Don't panic in release builds, that should only be needed in debug
+        if (gpa.deinit() != .ok and is_debug_build)
+            @panic("memory leaked");
+    }
     const allocator = gpa.allocator();
 
     try logz.setup(allocator, .{
