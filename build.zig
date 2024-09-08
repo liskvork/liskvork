@@ -124,19 +124,20 @@ pub fn build(b: *std.Build) !void {
                 optimize,
                 allocator,
             );
+    } else {
+        const liskvork = try configure_binary(
+            b,
+            opt,
+            native_target,
+            optimize,
+            allocator,
+        );
+
+        const run_liskvork = b.addRunArtifact(liskvork);
+
+        const run_step = b.step("run", "Run liskvork");
+        run_step.dependOn(&run_liskvork.step);
     }
-    const liskvork = try configure_binary(
-        b,
-        opt,
-        native_target,
-        optimize,
-        allocator,
-    );
-
-    const run_liskvork = b.addRunArtifact(liskvork);
-
-    const run_step = b.step("run", "Run liskvork");
-    run_step.dependOn(&run_liskvork.step);
 
     const test_step = b.step("test", "Run unit tests");
 
