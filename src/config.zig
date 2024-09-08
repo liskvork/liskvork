@@ -138,3 +138,31 @@ pub fn parse(filepath: []const u8, allocator: std.mem.Allocator) !config {
         try map_value(f, &tmp);
     return map_opt_struct_to_struct(tmp_config, config, &tmp);
 }
+
+test "ipv4 loopback default port" {
+    const parsed = try parse_full_ip("127.0.0.1:2105");
+    try std.testing.expectEqual(parsed.getPort(), 2105);
+    try std.testing.expectEqual(parsed.in.sa.addr, 0x100007f);
+}
+
+test "ipv4 loopback random port" {
+    const parsed = try parse_full_ip("127.0.0.1:0");
+    try std.testing.expectEqual(parsed.getPort(), 0);
+    try std.testing.expectEqual(parsed.in.sa.addr, 0x100007f);
+}
+
+test "ipv4 wildcard default port" {
+    const parsed = try parse_full_ip("0.0.0.0:2105");
+    try std.testing.expectEqual(parsed.getPort(), 2105);
+    try std.testing.expectEqual(parsed.in.sa.addr, 0);
+}
+
+test "ipv4 invalid no port" {
+    const parsed = parse_full_ip("127.0.0.1");
+    try std.testing.expectError(error.BadKey, parsed);
+}
+
+test "ipv4 invalid no ip" {
+    const parsed = parse_full_ip("2105");
+    try std.testing.expectError(error.BadKey, parsed);
+}

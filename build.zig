@@ -97,6 +97,8 @@ pub fn build(b: *std.Build) !void {
         .target = std_target,
         .optimize = optimize,
     });
+    unit_tests.root_module.addOptions("build_config", options);
+    unit_tests.root_module.addImport("ini", pkg.module("ini"));
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
     test_step.dependOn(&run_unit_tests.step);
