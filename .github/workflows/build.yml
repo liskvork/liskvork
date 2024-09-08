@@ -21,6 +21,14 @@ jobs:
         with:
           name: binaries
           path: ./zig-out/bin/liskvork-*
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          title: Development build
+          automatic_release_tag: latest
+          prerelease: true
+          files: |
+            ./zig-out/bin/liskvork-*
 
   test:
     strategy:
