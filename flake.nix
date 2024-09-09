@@ -65,21 +65,11 @@
 
           src = pkgs.lib.cleanSource ./.;
           buildInputs = [
-            zig
+            zig.hook
           ];
 
-          buildPhase = ''
-            zig build -Doptimize=ReleaseSafe
-          '';
-
-          doCheck = true;
-          checkPhase = ''
-            zig build test -Doptimize=ReleaseSafe
-          '';
-
-          installPhase = ''
-            zig build install --prefix $out -Doptimize=ReleaseSafe
-            rm -rf $out/zig # remove cache
+          postPatch = ''
+            ln -s ${pkgs.callPackage ./build.zig.zon.nix {}} $ZIG_GLOBAL_CACHE_DIR/p
           '';
         };
       };
