@@ -145,6 +145,10 @@ test "ipv4 loopback default port" {
     try std.testing.expectEqual(parsed.in.sa.addr, 0x100007f);
 }
 
+test {
+    std.testing.refAllDecls(@This());
+}
+
 test "ipv4 loopback random port" {
     const parsed = try parse_full_ip("127.0.0.1:0");
     try std.testing.expectEqual(parsed.getPort(), 0);
