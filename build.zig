@@ -71,8 +71,8 @@ fn create_binary_name(opt: build_options, target: std.Build.ResolvedTarget, allo
     );
 }
 
-fn configure_binary(b: *std.Build, opt: build_options, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, allocator: std.mem.Allocator) !*std.Build.Step.Compile {
-    const final_bin_name = try create_binary_name(
+fn configure_binary(b: *std.Build, opt: build_options, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, allocator: std.mem.Allocator, simple_bin_name: bool) !*std.Build.Step.Compile {
+    const final_bin_name = if (simple_bin_name) opt.bin_name else try create_binary_name(
         opt,
         target,
         allocator,
@@ -126,6 +126,7 @@ pub fn build(b: *std.Build) !void {
                 std.Build.resolveTargetQuery(b, target),
                 optimize,
                 allocator,
+                false,
             );
     } else {
         const liskvork = try configure_binary(
@@ -134,6 +135,7 @@ pub fn build(b: *std.Build) !void {
             native_target,
             optimize,
             allocator,
+            true,
         );
 
         const run_liskvork = b.addRunArtifact(liskvork);
