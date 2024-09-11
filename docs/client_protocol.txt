@@ -73,6 +73,38 @@ Example:
 ---
 
 s2c
+HELLO [NAME] [VERSION] "[MOTD]"
+
+The server MUST send that command to every client when they connect to it.
+It MUST give the NAME of the server, as well as a semver compatible VERSION
+(See https://semver.org/), and an MOTD between quotes that MAY be empty.
+
+The client MUST then answer with either PLAYER or SPECTATOR.
+If the client answers with SPECTATOR it MUST then only use the protocol defined
+in the gui_protocol.txt file, but if it answers PLAYER then it MUST answer to
+the following protocol.
+
+Once the client has answered the server MUST answer with either OK or KO, the
+latter accepting an OPTIONAL message with it
+
+Example:
+ The server sends:
+  HELLO liskvork 0.1.0-dev "Frieren sure was one hell of a good show"
+ The client answers:
+  SPECTATOR
+ The server sends:
+  OK
+
+ The serber sends:
+  HELLO really_cool_name 1.2.3 ""
+ The client answers:
+  PLAYER
+ The server sends:
+  KO Too many players connected
+
+---
+
+s2c
 BEGIN
 
 The server MUST send that command to the first client to play, the client MUST
