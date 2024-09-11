@@ -19,6 +19,13 @@ linkFarm "zig-packages" [
     };
   }
   {
+    name = "12206f5d1e5bd4793fe952bbae891b7424a19026e0d296a1381074c7d21d5d76c1a1";
+    path = fetchzip {
+      url = "https://github.com/karlseguin/zul/archive/08c989bf6871e87807a4668232913ee245425863.tar.gz";
+      hash = "sha256-jq0fQo22IfvhkpufIjN7mnhwe4/W9/3tHhtsh6AONBI=";
+    };
+  }
+  {
     name = "1220b0979ea9891fa4aeb85748fc42bc4b24039d9c99a4d65d893fb1c83e921efad8";
     path = fetchzip {
       url = "https://github.com/ziglibs/ini/archive/e18d36665905c1e7ba0c1ce3e8780076b33e3002.tar.gz";
