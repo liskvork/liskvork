@@ -13,6 +13,10 @@
             .url = "https://github.com/karlseguin/log.zig/archive/97d0818270a357d3ce7bc878abc32dc996fe78ff.tar.gz",
             .hash = "1220c032d828e768348b321a79523812be1c4cb27e1eb7ff5df54b573fa131afd448",
         },
+        .network = .{
+            .url = "https://github.com/ikskuh/zig-network/archive/bcf6cc8918d574f947b2647522d84a805c33f1c8.tar.gz",
+            .hash = "12203b3634f36570ffced059248bd429cd06dc89a98659c86569d890fdd99b5070bd",
+        },
     },
     .paths = .{
         "build.zig",

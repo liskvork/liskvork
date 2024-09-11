@@ -1,9 +1,12 @@
-const ini = @import("ini");
 const std = @import("std");
+
+const ini = @import("ini");
+const net = @import("network");
 
 // Add to this structure to automatically add to the config
 pub const config = struct {
-    network_bind: std.net.Address,
+    network_ip: net.Address,
+    network_port: u16,
 };
 
 pub const ConfigError = error{
@@ -80,22 +83,13 @@ fn map_opt_struct_to_struct(opt_stc: type, stc: type, from: *const opt_stc) stc 
     return to;
 }
 
-// TODO: Handle ipv6
-fn parse_full_ip(ip: []const u8) !std.net.Address {
-    const colon = std.mem.indexOf(u8, ip, ":") orelse return ConfigError.BadKey;
-    const port_slice = ip[colon + 1 ..];
-    const port = try std.fmt.parseInt(u16, port_slice, 10);
-    const ip_slice = ip[0..colon];
-    return try std.net.Address.parseIp(ip_slice, port);
-}
-
 fn map_value(kv: ini_field, conf: *tmp_config) !void {
     inline for (std.meta.fields(@TypeOf(conf.*))) |f| {
         if (std.mem.eql(u8, f.name, kv.full_name)) {
             const target_type = @typeInfo(f.type).Optional.child;
             @field(conf, f.name) = switch (target_type) {
                 u16, u32, u64, i16, i32, i64 => try std.fmt.parseInt(target_type, kv.value, 0),
-                std.net.Address => try parse_full_ip(kv.value),
+                net.Address => try net.Address.parse(kv.value),
                 else => @panic("You probably need to implement another type :3"),
             };
             return;
@@ -139,34 +133,6 @@ pub fn parse(filepath: []const u8, allocator: std.mem.Allocator) !config {
     return map_opt_struct_to_struct(tmp_config, config, &tmp);
 }
 
-test "ipv4 loopback default port" {
-    const parsed = try parse_full_ip("127.0.0.1:2105");
-    try std.testing.expectEqual(parsed.getPort(), 2105);
-    try std.testing.expectEqual(parsed.in.sa.addr, 0x100007f);
-}
-
 test {
     std.testing.refAllDecls(@This());
-}
-
-test "ipv4 loopback random port" {
-    const parsed = try parse_full_ip("127.0.0.1:0");
-    try std.testing.expectEqual(parsed.getPort(), 0);
-    try std.testing.expectEqual(parsed.in.sa.addr, 0x100007f);
-}
-
-test "ipv4 wildcard default port" {
-    const parsed = try parse_full_ip("0.0.0.0:2105");
-    try std.testing.expectEqual(parsed.getPort(), 2105);
-    try std.testing.expectEqual(parsed.in.sa.addr, 0);
-}
-
-test "ipv4 invalid no port" {
-    const parsed = parse_full_ip("127.0.0.1");
-    try std.testing.expectError(error.BadKey, parsed);
-}
-
-test "ipv4 invalid no ip" {
-    const parsed = parse_full_ip("2105");
-    try std.testing.expectError(error.BadKey, parsed);
 }
