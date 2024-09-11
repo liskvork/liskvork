@@ -5,10 +5,11 @@ const logz = @import("logz");
 const build_config = @import("build_config");
 
 const config = @import("config.zig");
+const server = @import("server.zig");
 
-const semver = std.SemanticVersion.parse(build_config.version) catch @compileError("Given version is not valid semver");
+pub const semver = std.SemanticVersion.parse(build_config.version) catch @compileError("Given version is not valid semver");
 
-const is_debug_build = builtin.mode == std.builtin.OptimizeMode.Debug;
+pub const is_debug_build = builtin.mode == std.builtin.OptimizeMode.Debug;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -29,7 +30,7 @@ pub fn main() !void {
     logz.info().ctx("Launching liskvork").stringSafe("version", build_config.version).log();
 
     const conf = try config.parse("config.ini", allocator);
-    _ = conf;
+    try server.launch_server(&conf, allocator);
 }
 
 test {
