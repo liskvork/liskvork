@@ -221,3 +221,10 @@ Example:
   DEBUG The most promising move now is [10,14] alfa=10025 beta=8641
   DEBUG The most promising move now is [11,14] alfa=10125 beta=8641
 
+-----
+
+Version history
+
+2024-09-11
+Initial creation of the protocol mainly taken from the official Gomoku
+AI protocol.
