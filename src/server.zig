@@ -7,7 +7,7 @@ const net = @import("network");
 
 const build_config = @import("build_config");
 
-const root = @import("root");
+const utils = @import("utils.zig");
 const config = @import("config.zig");
 
 pub const Message = struct {
@@ -154,7 +154,7 @@ fn handle_commands(ctx: *Context) !void {
         for (cli.msg.items) |msg| {
             defer msg.deinit();
             logz.debug().ctx("Handling message").string("data", msg.data).int("timestamp", msg.timestamp).log();
-            if (root.is_debug_build and std.mem.eql(u8, msg.data, "STOP")) {
+            if (utils.is_debug_build and std.mem.eql(u8, msg.data, "STOP")) {
                 ctx.running = false;
             }
         }
