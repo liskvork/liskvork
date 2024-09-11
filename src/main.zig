@@ -16,7 +16,9 @@ pub const is_debug_build = builtin.mode == std.builtin.OptimizeMode.Debug;
 pub fn main() !void {
     const start_time = std.time.milliTimestamp();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .safety = is_debug_build,
+    }){};
     defer {
         // Don't panic in release builds, that should only be needed in debug
         if (gpa.deinit() != .ok and is_debug_build)
@@ -25,7 +27,16 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     try logz.setup(allocator, .{
-        .level = if (is_debug_build) .Debug else .Info,
+        .level = .Error,
+        .output = .stdout,
+        .encoding = .logfmt,
+    });
+
+    const conf = try config.parse("config.ini", allocator);
+    defer config.deinit_config(config.config, &conf, allocator);
+
+    try logz.setup(allocator, .{
+        .level = conf.log_level,
         .output = .stdout,
         .encoding = .logfmt,
     });
@@ -33,9 +44,7 @@ pub fn main() !void {
 
     logz.info().ctx("Launching liskvork").stringSafe("version", build_config.version).log();
 
-    const conf = try config.parse("config.ini", allocator);
     try server.launch_server(&conf, allocator);
-    config.deinit_config(config.config, &conf, allocator);
 
     const close_time = std.time.milliTimestamp();
     const uptime = try zul.DateTime.fromUnix(close_time - start_time, .milliseconds);
