@@ -31,6 +31,7 @@ pub fn main() !void {
 
     const conf = try config.parse("config.ini", allocator);
     try server.launch_server(&conf, allocator);
+    config.deinit_config(config.config, &conf, allocator);
 }
 
 test {
