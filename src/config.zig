@@ -1,5 +1,6 @@
 const std = @import("std");
 
+const logz = @import("logz");
 const ini = @import("ini");
 const net = @import("network");
 
@@ -9,14 +10,14 @@ pub const config = struct {
     network_port: u16,
 
     game_board_size: u32,
-    game_timeout_match: i64,
-    game_timeout_turn: i64,
+    game_timeout_match: u64,
+    game_timeout_turn: u64,
     game_max_memory: u64,
 
     other_spectator_slots: i32,
     other_motd: []const u8,
 
-    log_level: []const u8,
+    log_level: logz.Level,
 };
 
 pub const ConfigError = error{
@@ -97,6 +98,16 @@ fn map_value(kv: ini_field, conf: *tmp_config, allocator: std.mem.Allocator) !vo
     inline for (std.meta.fields(@TypeOf(conf.*))) |f| {
         if (std.mem.eql(u8, f.name, kv.full_name)) {
             const target_type = @typeInfo(f.type).Optional.child;
+            // Handle enums first
+            if (@typeInfo(target_type) == .Enum) {
+                if (std.meta.stringToEnum(target_type, kv.value)) |h| {
+                    @field(conf, f.name) = h;
+                    return;
+                }
+                logz.fatal().ctx("Couldn't map enum in config").string("key", kv.full_name).string("value", kv.value).log();
+                return error.BadKey;
+            }
+            // Handle other types
             @field(conf, f.name) = switch (target_type) {
                 u16, u32, u64, i16, i32, i64 => try std.fmt.parseInt(target_type, kv.value, 0),
                 net.Address => try net.Address.parse(kv.value),
