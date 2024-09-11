@@ -7,6 +7,16 @@ const net = @import("network");
 pub const config = struct {
     network_ip: net.Address,
     network_port: u16,
+
+    game_board_size: u32,
+    game_timeout_match: i64,
+    game_timeout_turn: i64,
+    game_max_memory: u64,
+
+    other_spectator_slots: i32,
+    other_motd: []const u8,
+
+    log_level: []const u8,
 };
 
 pub const ConfigError = error{
@@ -83,14 +93,15 @@ fn map_opt_struct_to_struct(opt_stc: type, stc: type, from: *const opt_stc) stc 
     return to;
 }
 
-fn map_value(kv: ini_field, conf: *tmp_config) !void {
+fn map_value(kv: ini_field, conf: *tmp_config, allocator: std.mem.Allocator) !void {
     inline for (std.meta.fields(@TypeOf(conf.*))) |f| {
         if (std.mem.eql(u8, f.name, kv.full_name)) {
             const target_type = @typeInfo(f.type).Optional.child;
             @field(conf, f.name) = switch (target_type) {
                 u16, u32, u64, i16, i32, i64 => try std.fmt.parseInt(target_type, kv.value, 0),
                 net.Address => try net.Address.parse(kv.value),
-                else => @panic("You probably need to implement another type :3"),
+                []const u8 => try allocator.dupe(u8, kv.value),
+                else => @compileError("You probably need to implement parsing for " ++ @typeName(target_type) ++ " :3"),
             };
             return;
         }
@@ -102,6 +113,9 @@ pub fn parse(filepath: []const u8, allocator: std.mem.Allocator) !config {
     const file = try std.fs.cwd().openFile(filepath, .{});
     defer file.close();
 
+    // That currently does read calls of size 1 for the whole parsing
+    // Not really good but for now it is good
+    // TODO: Patch this
     var parser = ini.parse(allocator, file.reader(), ";#");
     defer parser.deinit();
 
@@ -129,8 +143,17 @@ pub fn parse(filepath: []const u8, allocator: std.mem.Allocator) !config {
         }
     }
     for (fields.items) |f|
-        try map_value(f, &tmp);
+        try map_value(f, &tmp, allocator);
     return map_opt_struct_to_struct(tmp_config, config, &tmp);
+}
+
+pub fn deinit_config(t: type, conf: *const t, allocator: std.mem.Allocator) void {
+    inline for (std.meta.fields(@TypeOf(conf.*))) |f| {
+        switch (f.type) {
+            []const u8 => allocator.free(@field(conf, f.name)),
+            else => {},
+        }
+    }
 }
 
 test {
