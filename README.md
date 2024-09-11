@@ -1,11 +1,9 @@
 # liskvork
 
-Linux native piskvork reimplementation.
+Modern multi-platform piskvork reimplementation.
 
-It should also support Mac (Intel and Apple Silicon) and Windows but if there
-are problems please open an issue
-[here](https://github.com/Epitech/B-AIA-500_liskvork/issues). Those other
-platforms are not a priority but I while give support for them.
+Linux, Windows and MacOS support (with priority to Linux) on both x86_64 and
+aarch64.
 
 ## Building from source
 
