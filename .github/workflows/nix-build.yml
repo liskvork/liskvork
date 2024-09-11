@@ -23,4 +23,4 @@ jobs:
       - uses: cachix/install-nix-action@v27
         with:
           nix_path: nixpkgs=channel:nixos-unstable
-      - run: nix flake check
+      - run: nix flake check --all-systems
