@@ -2,8 +2,12 @@ const builtin = @import("builtin");
 
 const std = @import("std");
 
+const logz = @import("logz");
 const net = @import("network");
 
+const build_config = @import("build_config");
+
+const root = @import("root");
 const config = @import("config.zig");
 
 pub const Message = struct {
@@ -20,6 +24,7 @@ pub const Message = struct {
         return .{
             .data = try allocator.dupe(u8, data),
             .timestamp = std.time.microTimestamp(),
+            .allocator = allocator,
         };
     }
 
@@ -46,7 +51,24 @@ pub const Client = struct {
         };
     }
 
-    fn handle_net_event(self: *Self, set: *const net.SocketSet) !void {
+    fn create_messages(self: *Self, allocator: std.mem.Allocator) !void {
+        while (std.mem.indexOfPos(
+            u8,
+            self.internal_rbuffer.items,
+            0,
+            "\n",
+        )) |i| {
+            const msg_slice = self.internal_rbuffer.items[0..i];
+            try self.msg.append(try Message.init(msg_slice, allocator));
+            logz.debug().ctx("New command").string("data", msg_slice).log();
+            const src = self.internal_rbuffer.items[i + 1 ..];
+            const dest = self.internal_rbuffer.items;
+            std.mem.copyForwards(u8, dest, src);
+            self.internal_rbuffer.shrinkRetainingCapacity(src.len);
+        }
+    }
+
+    fn handle_net_event(self: *Self, set: *const net.SocketSet, allocator: std.mem.Allocator) !void {
         if (set.isFaulted(self.sock)) {
             self.stopping = true;
             return;
@@ -58,7 +80,8 @@ pub const Client = struct {
                 self.stopping = true;
                 return;
             }
-            try self.internal_wbuffer.appendSlice(tmp_rbuf[0..nb_bytes]);
+            try self.internal_rbuffer.appendSlice(tmp_rbuf[0..nb_bytes]);
+            try self.create_messages(allocator);
         }
         if (set.isReadyWrite(self.sock)) {
             const nb_bytes = try self.sock.send(self.internal_wbuffer.items);
@@ -68,6 +91,7 @@ pub const Client = struct {
                 const src = self.internal_wbuffer.items[nb_bytes..];
                 const dest = self.internal_wbuffer.items;
                 std.mem.copyForwards(u8, dest, src);
+                self.internal_wbuffer.shrinkRetainingCapacity(src.len);
             }
         }
     }
@@ -94,6 +118,7 @@ pub const Context = struct {
     srv_sock: net.Socket,
     clients: std.ArrayList(Client),
     conf: *const config.config,
+    running: bool = true,
 
     pub fn init(allocator: std.mem.Allocator, conf: *const config.config, is_ipv6: bool) !Context {
         return .{
@@ -124,6 +149,19 @@ fn setup_socket_set(ctx: *const Context, set: *net.SocketSet) !void {
         });
 }
 
+fn handle_commands(ctx: *Context) !void {
+    for (ctx.clients.items) |*cli| {
+        for (cli.msg.items) |msg| {
+            defer msg.deinit();
+            logz.debug().ctx("Handling message").string("data", msg.data).int("timestamp", msg.timestamp).log();
+            if (root.is_debug_build and std.mem.eql(u8, msg.data, "STOP")) {
+                ctx.running = false;
+            }
+        }
+        cli.msg.clearRetainingCapacity();
+    }
+}
+
 pub fn launch_server(conf: *const config.config, allocator: std.mem.Allocator) !void {
     const is_ipv6: bool = switch (conf.network_ip) {
         .ipv4 => false,
@@ -141,13 +179,13 @@ pub fn launch_server(conf: *const config.config, allocator: std.mem.Allocator) !
     var set = try net.SocketSet.init(allocator);
     defer set.deinit();
 
-    while (true) {
+    while (ctx.running) {
         try setup_socket_set(&ctx, &set);
         const evt_return = try net.waitForSocketEvent(&set, null);
         const has_timeout_been_reached = evt_return == 0;
         _ = has_timeout_been_reached;
         for (ctx.clients.items) |*cli|
-            try cli.handle_net_event(&set);
+            try cli.handle_net_event(&set, allocator);
         if (set.isReadyRead(ctx.srv_sock)) {
             // Accept new connection
             const new_sock = try ctx.srv_sock.accept();
@@ -162,7 +200,7 @@ pub fn launch_server(conf: *const config.config, allocator: std.mem.Allocator) !
             }
             i += 1;
         }
-        break;
+        try handle_commands(&ctx);
     }
 }
 
