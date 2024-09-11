@@ -8,20 +8,17 @@ const build_config = @import("build_config");
 
 const config = @import("config.zig");
 const server = @import("server.zig");
-
-pub const semver = std.SemanticVersion.parse(build_config.version) catch @compileError("Given version is not valid semver");
-
-pub const is_debug_build = builtin.mode == std.builtin.OptimizeMode.Debug;
+const utils = @import("utils.zig");
 
 pub fn main() !void {
     const start_time = std.time.milliTimestamp();
 
     var gpa = std.heap.GeneralPurposeAllocator(.{
-        .safety = is_debug_build,
+        .safety = utils.is_debug_build,
     }){};
     defer {
         // Don't panic in release builds, that should only be needed in debug
-        if (gpa.deinit() != .ok and is_debug_build)
+        if (gpa.deinit() != .ok and utils.is_debug_build)
             @panic("memory leaked");
     }
     const allocator = gpa.allocator();
