@@ -46,7 +46,7 @@ pub const Client = struct {
         };
     }
 
-    fn handle_event(self: *Self, set: *const net.SocketSet) !void {
+    fn handle_net_event(self: *Self, set: *const net.SocketSet) !void {
         if (set.isFaulted(self.sock)) {
             self.stopping = true;
             return;
@@ -147,7 +147,7 @@ pub fn launch_server(conf: *const config.config, allocator: std.mem.Allocator) !
         const has_timeout_been_reached = evt_return == 0;
         _ = has_timeout_been_reached;
         for (ctx.clients.items) |*cli|
-            try cli.handle_event(&set);
+            try cli.handle_net_event(&set);
         if (set.isReadyRead(ctx.srv_sock)) {
             // Accept new connection
             const new_sock = try ctx.srv_sock.accept();
