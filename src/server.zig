@@ -162,6 +162,7 @@ pub fn launch_server(conf: *const config.config, allocator: std.mem.Allocator) !
             }
             i += 1;
         }
+        break;
     }
 }
 
