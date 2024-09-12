@@ -131,6 +131,12 @@ pub const Client = struct {
         try self.send_message(to_send);
     }
 
+    fn send_start(self: *Self, ctx: *const server.Context, allocator: std.mem.Allocator) !void {
+        const to_send = try std.fmt.allocPrint(allocator, "START {}\n", .{ctx.conf.game_board_size});
+        defer allocator.free(to_send);
+        try self.send_message(to_send);
+    }
+
     fn handle_plogic(self: *Self, ctx: *server.Context, msg: *Message, allocator: std.mem.Allocator) !void {
         _ = msg;
         // TODO: Remove this later, it's only there for debug
