@@ -119,6 +119,10 @@ pub const Client = struct {
         try self.send_message("KO\n");
     }
 
+    fn send_begin(self: *Self) !void {
+        try self.send_message("BEGIN\n");
+    }
+
     fn handle_plogic(self: *Self, ctx: *server.Context, msg: *Message, allocator: std.mem.Allocator) !void {
         _ = msg;
         // TODO: Remove this later, it's only there for debug
