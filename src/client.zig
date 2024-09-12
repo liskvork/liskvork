@@ -69,6 +69,10 @@ pub const Client = struct {
         try self.send_message("OK\n");
     }
 
+    fn send_about(self: *Self) !void {
+        try self.send_message("ABOUT\n");
+    }
+
     fn send_ko(self: *Self, msg: ?[]const u8, allocator: std.mem.Allocator) !void {
         if (msg) |m| {
             const to_send = try std.fmt.allocPrint(allocator, "KO {s}\n", .{m});
