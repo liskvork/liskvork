@@ -70,6 +70,12 @@ pub const Client = struct {
         try self.internal_wbuffer.appendSlice(msg);
     }
 
+    fn send_format_message(self: *Self, comptime fmt: []const u8, args: anytype, allocator: std.mem.Allocator) !void {
+        const to_send = try std.fmt.allocPrint(allocator, fmt, args);
+        defer allocator.free(to_send);
+        try self.send_message(to_send);
+    }
+
     fn send_handshake(self: *Self, ctx: *const server.Context) !void {
         try self.send_message(ctx.cache.handshake);
     }
@@ -84,11 +90,7 @@ pub const Client = struct {
 
     fn send_info_no_check(self: *Self, T: type, name: []const u8, val: T, allocator: std.mem.Allocator) !void {
         switch (T) {
-            u64 => {
-                const to_send = try std.fmt.allocPrint(allocator, "INFO {s} {}\n", .{ name, val });
-                defer allocator.free(to_send);
-                try self.send_message(to_send);
-            },
+            u64 => try self.send_format_message("INFO {s} {}\n", .{ name, val }, allocator),
             else => @compileError("Missing serializer for send_info_no_check for type " ++ @typeName(T)),
         }
     }
@@ -113,12 +115,8 @@ pub const Client = struct {
 
     fn send_ko(self: *Self, msg: ?[]const u8, allocator: std.mem.Allocator) !void {
         if (msg) |m| {
-            const to_send = try std.fmt.allocPrint(allocator, "KO {s}\n", .{m});
-            defer allocator.free(to_send);
-            try self.send_message(to_send);
-            return;
-        }
-        try self.send_message("KO\n");
+            try self.send_format_message("KO {s}\n", .{m}, allocator);
+        } else try self.send_message("KO\n");
     }
 
     fn send_begin(self: *Self) !void {
@@ -126,15 +124,11 @@ pub const Client = struct {
     }
 
     fn send_turn(self: *Self, pos: GamePosition, allocator: std.mem.Allocator) !void {
-        const to_send = try std.fmt.allocPrint(allocator, "TURN {},{}\n", .{ pos[0], pos[1] });
-        defer allocator.free(to_send);
-        try self.send_message(to_send);
+        try self.send_format_message("TURN {},{}\n", .{ pos[0], pos[1] }, allocator);
     }
 
     fn send_start(self: *Self, ctx: *const server.Context, allocator: std.mem.Allocator) !void {
-        const to_send = try std.fmt.allocPrint(allocator, "START {}\n", .{ctx.conf.game_board_size});
-        defer allocator.free(to_send);
-        try self.send_message(to_send);
+        try self.send_format_message("START {}\n", .{ctx.conf.game_board_size}, allocator);
     }
 
     fn handle_plogic(self: *Self, ctx: *server.Context, msg: *Message, allocator: std.mem.Allocator) !void {
