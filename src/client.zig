@@ -28,6 +28,13 @@ const ServerInfo = union(enum) {
 
 const GamePosition = @Vector(2, u32);
 
+const EndStatus = enum {
+    WIN,
+    LOSE,
+    TIE,
+    ERROR,
+};
+
 pub const Client = struct {
     const Self = @This();
 
@@ -129,6 +136,14 @@ pub const Client = struct {
 
     fn send_start(self: *Self, ctx: *const server.Context, allocator: std.mem.Allocator) !void {
         try self.send_format_message("START {}\n", .{ctx.conf.game_board_size}, allocator);
+    }
+
+    fn send_end_no_check(self: *Self, status: []const u8, msg: ?[]const u8, allocator: std.mem.Allocator) !void {
+        try self.send_format_message("END {} \"{}\"\n", .{ status, msg orelse "" }, allocator);
+    }
+
+    fn send_end(self: *Self, status: EndStatus, msg: ?[]const u8, allocator: std.mem.Allocator) !void {
+        try self.send_end_no_check(@tagName(status), msg, allocator);
     }
 
     fn handle_plogic(self: *Self, ctx: *server.Context, msg: *Message, allocator: std.mem.Allocator) !void {
