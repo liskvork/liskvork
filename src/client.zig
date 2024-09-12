@@ -26,6 +26,8 @@ const ServerInfo = union(enum) {
     time_left: u64,
 };
 
+const GamePosition = @Vector(2, u32);
+
 pub const Client = struct {
     const Self = @This();
 
@@ -121,6 +123,12 @@ pub const Client = struct {
 
     fn send_begin(self: *Self) !void {
         try self.send_message("BEGIN\n");
+    }
+
+    fn send_turn(self: *Self, pos: GamePosition, allocator: std.mem.Allocator) !void {
+        const to_send = try std.fmt.allocPrint(allocator, "TURN {},{}\n", .{ pos[0], pos[1] });
+        defer allocator.free(to_send);
+        try self.send_message(to_send);
     }
 
     fn handle_plogic(self: *Self, ctx: *server.Context, msg: *Message, allocator: std.mem.Allocator) !void {
