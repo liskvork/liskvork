@@ -103,12 +103,17 @@ pub const Client = struct {
     }
 
     fn send_info(self: *Self, info: ServerInfo, allocator: std.mem.Allocator) !void {
-        // TODO: Check if there is a better way to do this, cause this looks ugly af
         switch (info) {
-            .timeout_turn => |v| try self.send_info_no_check(@TypeOf(v), "timeout_turn", v, allocator),
-            .timeout_match => |v| try self.send_info_no_check(@TypeOf(v), "timeout_match", v, allocator),
-            .max_memory => |v| try self.send_info_no_check(@TypeOf(v), "max_memory", v, allocator),
-            .time_left => |v| try self.send_info_no_check(@TypeOf(v), "time_left", v, allocator),
+            .timeout_turn,
+            .timeout_match,
+            .max_memory,
+            .time_left,
+            => |v| try self.send_info_no_check(
+                @TypeOf(v),
+                @tagName(info),
+                v,
+                allocator,
+            ),
         }
     }
 
@@ -173,6 +178,7 @@ pub const Client = struct {
             logz.debug().ctx("Handling message").string("data", msg.data).int("timestamp", msg.timestamp).log();
             if (utils.is_debug_build and std.mem.eql(u8, msg.data, "STOP")) {
                 ctx.running = false;
+                return;
             }
 
             switch (self.state) {
