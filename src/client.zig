@@ -19,6 +19,13 @@ const ClientType = enum {
     Spectator,
 };
 
+const ServerInfo = union(enum) {
+    timeout_turn: u64,
+    timeout_match: u64,
+    max_memory: u64,
+    time_left: u64,
+};
+
 pub const Client = struct {
     const Self = @This();
 
@@ -73,26 +80,56 @@ pub const Client = struct {
         try self.send_message("ABOUT\n");
     }
 
+    fn send_info_no_check(self: *Self, T: type, name: []const u8, val: T, allocator: std.mem.Allocator) !void {
+        switch (T) {
+            u64 => {
+                const to_send = try std.fmt.allocPrint(allocator, "INFO {s} {}\n", .{ name, val });
+                defer allocator.free(to_send);
+                try self.send_message(to_send);
+            },
+            else => @compileError("Missing serializer for send_info_no_check for type " ++ @typeName(T)),
+        }
+    }
+
+    fn send_info(self: *Self, info: ServerInfo, allocator: std.mem.Allocator) !void {
+        // TODO: Check if there is a better way to do this, cause this looks ugly af
+        switch (info) {
+            .timeout_turn => |v| try self.send_info_no_check(@TypeOf(v), "timeout_turn", v, allocator),
+            .timeout_match => |v| try self.send_info_no_check(@TypeOf(v), "timeout_match", v, allocator),
+            .max_memory => |v| try self.send_info_no_check(@TypeOf(v), "max_memory", v, allocator),
+            .time_left => |v| try self.send_info_no_check(@TypeOf(v), "time_left", v, allocator),
+        }
+    }
+
+    fn send_all_infos(self: *Self, ctx: *const server.Context, allocator: std.mem.Allocator) !void {
+        try self.send_info(.{ .timeout_turn = ctx.conf.game_timeout_turn }, allocator);
+        try self.send_info(.{ .timeout_match = ctx.conf.game_timeout_match }, allocator);
+        try self.send_info(.{ .max_memory = ctx.conf.game_max_memory }, allocator);
+        // TODO: Put the actual value
+        try self.send_info(.{ .time_left = 0 }, allocator);
+    }
+
     fn send_ko(self: *Self, msg: ?[]const u8, allocator: std.mem.Allocator) !void {
         if (msg) |m| {
             const to_send = try std.fmt.allocPrint(allocator, "KO {s}\n", .{m});
+            defer allocator.free(to_send);
             try self.send_message(to_send);
-            allocator.free(to_send);
             return;
         }
         try self.send_message("KO\n");
     }
 
-    fn handle_plogic(self: *Self, ctx: *server.Context, msg: *Message) !void {
-        _ = self;
-        _ = ctx;
+    fn handle_plogic(self: *Self, ctx: *server.Context, msg: *Message, allocator: std.mem.Allocator) !void {
         _ = msg;
+        // TODO: Remove this later, it's only there for debug
+        try self.send_all_infos(ctx, allocator);
     }
 
-    fn handle_slogic(self: *Self, ctx: *server.Context, msg: *Message) !void {
+    fn handle_slogic(self: *Self, ctx: *server.Context, msg: *Message, allocator: std.mem.Allocator) !void {
         _ = self;
         _ = ctx;
         _ = msg;
+        _ = allocator;
     }
 
     pub fn handle_logic(self: *Self, ctx: *server.Context, allocator: std.mem.Allocator) !void {
@@ -140,8 +177,8 @@ pub const Client = struct {
                 },
                 else => {
                     switch (self.ctype.?) {
-                        .Player => try self.handle_plogic(ctx, msg),
-                        .Spectator => try self.handle_slogic(ctx, msg),
+                        .Player => try self.handle_plogic(ctx, msg, allocator),
+                        .Spectator => try self.handle_slogic(ctx, msg, allocator),
                     }
                 },
             }
