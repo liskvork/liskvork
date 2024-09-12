@@ -45,6 +45,7 @@ fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.B
 
     const options = b.addOptions();
     options.addOption([]const u8, "version", opt.version);
+    options.addOption([]const u8, "bin_name", opt.bin_name);
 
     bin.root_module.addOptions("build_config", options);
     bin.root_module.addImport("ini", ini_pkg.module("ini"));
