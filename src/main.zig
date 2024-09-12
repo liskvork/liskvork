@@ -15,6 +15,7 @@ pub fn main() !void {
 
     var gpa = std.heap.GeneralPurposeAllocator(.{
         .safety = utils.is_debug_build,
+        .verbose_log = false, // abandon hope all ye who enter here
     }){};
     defer {
         // Don't panic in release builds, that should only be needed in debug
