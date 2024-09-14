@@ -52,6 +52,17 @@ pub const ClientResponseAbout = struct {
         };
     }
 
+    pub fn dupe(self: *const Self, allocator: std.mem.Allocator) !Self {
+        return .{
+            .name = try allocator.dupe(u8, self.name),
+            .version = if (self.version) |v| try allocator.dupe(u8, v) else null,
+            .author = if (self.author) |v| try allocator.dupe(u8, v) else null,
+            .country = if (self.country) |v| try allocator.dupe(u8, v) else null,
+            .www = if (self.www) |v| try allocator.dupe(u8, v) else null,
+            .allocator = allocator,
+        };
+    }
+
     pub fn deinit(self: *const Self) void {
         self.allocator.free(self.name);
         if (self.version) |v| self.allocator.free(v);
