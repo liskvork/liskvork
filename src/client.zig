@@ -15,6 +15,7 @@ const ClientState = enum {
     WaitingForRole,
     SWaitingForStart,
     PWaitingForStart,
+    PWaitingForAbout,
 };
 
 const ClientType = enum {
@@ -49,6 +50,7 @@ pub const Client = struct {
     stopping: bool = false,
     state: ClientState = ClientState.WaitingForHandshake,
     ctype: ?ClientType = null,
+    infos: ?command.ClientResponseAbout = null,
 
     pub fn init(allocator: std.mem.Allocator, sock: net.Socket) Client {
         return .{
@@ -155,11 +157,53 @@ pub const Client = struct {
         try self.send_end_no_check(@tagName(status), msg, allocator);
     }
 
+    fn handle_log(self: *Self, l: *const command.ClientCommandLog) void {
+        std.debug.assert(self.infos != null);
+        switch (l.msg_type) {
+            .Info => logz.info().ctx("info from client").string("name", self.infos.?.name).string("msg", l.data).log(),
+            .Error => logz.info().ctx("error from client").string("name", self.infos.?.name).string("msg", l.data).log(),
+            .Debug => logz.info().ctx("debug from client").string("name", self.infos.?.name).string("msg", l.data).log(),
+            .Unknown => logz.warn().ctx("unknown from client").string("name", self.infos.?.name).string("msg", l.data).log(),
+        }
+    }
+
     fn handle_plogic(self: *Self, ctx: *server.Context, msg: *Message, allocator: std.mem.Allocator) !void {
-        const cmd = try command.parse(msg.data, allocator);
-        _ = cmd;
-        // TODO: Remove this later, it's only there for debug
-        try self.send_all_infos(ctx, allocator);
+        const cmd: command.ClientCommand = try command.parse(msg.data, allocator) orelse {
+            try self.send_ko("Unknown command or incorrect syntax", allocator);
+            return;
+        };
+        defer cmd.deinit();
+        _ = ctx;
+
+        // We only accept logs after getting the client's name
+        if (self.state != .PWaitingForAbout) {
+            std.debug.assert(self.infos != null);
+            switch (cmd) {
+                .CommandLog => |v| return handle_log(self, &v),
+                else => {},
+            }
+        }
+
+        switch (self.state) {
+            .PWaitingForAbout => {
+                switch (cmd) {
+                    .ResponseAbout => |v| {
+                        // It looks like there should be a feedback to the client
+                        // TODO: Modify the spec for that, maybe even merge the
+                        // about and initial role choice (Sounds better)
+                        self.infos = try v.dupe(allocator);
+                        self.state = .PWaitingForStart;
+                        logz.info().ctx("New player").string("name", self.infos.?.name).log();
+                    },
+                    else => {
+                        try self.send_ko("Incorrect answer to ABOUT, try again", allocator);
+                        return;
+                    },
+                }
+            },
+            .PWaitingForStart => {},
+            else => unreachable,
+        }
     }
 
     fn handle_slogic(self: *Self, ctx: *server.Context, msg: *Message, allocator: std.mem.Allocator) !void {
@@ -196,9 +240,11 @@ pub const Client = struct {
                             continue;
                         }
                         self.ctype = ClientType.Player;
-                        self.state = ClientState.PWaitingForStart;
+                        self.state = ClientState.PWaitingForAbout;
                         ctx.nb_players += 1;
                         try self.send_ok();
+                        try self.send_all_infos(ctx, allocator);
+                        try self.send_about();
                     } else if (std.mem.eql(u8, msg.data, "SPECTATOR")) {
                         if (ctx.conf.other_spectator_slots != 0 and ctx.nb_spectators >= ctx.conf.other_spectator_slots) {
                             try self.send_ko("Too many spectators connected, try later", allocator);
@@ -271,6 +317,8 @@ pub const Client = struct {
                 .Spectator => ctx.nb_spectators -= 1,
             }
         }
+        if (self.infos) |i|
+            i.deinit();
     }
 };
 
