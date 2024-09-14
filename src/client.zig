@@ -3,6 +3,8 @@ const std = @import("std");
 const net = @import("network");
 const logz = @import("logz");
 
+const build_config = @import("build_config");
+
 const Message = @import("message.zig").Message;
 const server = @import("server.zig");
 const utils = @import("utils.zig");
@@ -228,8 +230,7 @@ pub const Client = struct {
             return;
         }
         if (set.isReadyRead(self.sock)) {
-            // TODO: Move that magic value to some variable (preferably a build option)
-            var tmp_rbuf: [4096]u8 = undefined;
+            var tmp_rbuf: [build_config.net_max_read_size]u8 = undefined;
             const nb_bytes = try self.sock.receive(&tmp_rbuf);
             if (nb_bytes == 0) {
                 self.stopping = true;
