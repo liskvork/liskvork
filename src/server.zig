@@ -9,7 +9,8 @@ const build_config = @import("build_config");
 
 const utils = @import("utils.zig");
 const config = @import("config.zig");
-const Client = @import("client.zig").Client;
+const client = @import("client.zig");
+const Client = client.Client;
 
 const Cache = struct {
     const Self = @This();
