@@ -6,6 +6,7 @@ const logz = @import("logz");
 const Message = @import("message.zig").Message;
 const server = @import("server.zig");
 const utils = @import("utils.zig");
+const command = @import("command.zig");
 
 const ClientState = enum {
     WaitingForHandshake,
@@ -26,7 +27,8 @@ const ServerInfo = union(enum) {
     time_left: u64,
 };
 
-const GamePosition = @Vector(2, u32);
+// TODO: Move that to another file
+pub const GamePosition = @Vector(2, u32);
 
 const EndStatus = enum {
     WIN,
@@ -152,7 +154,8 @@ pub const Client = struct {
     }
 
     fn handle_plogic(self: *Self, ctx: *server.Context, msg: *Message, allocator: std.mem.Allocator) !void {
-        _ = msg;
+        const cmd = try command.parse(msg.data, allocator);
+        _ = cmd;
         // TODO: Remove this later, it's only there for debug
         try self.send_all_infos(ctx, allocator);
     }
@@ -225,6 +228,7 @@ pub const Client = struct {
             return;
         }
         if (set.isReadyRead(self.sock)) {
+            // TODO: Move that magic value to some variable (preferably a build option)
             var tmp_rbuf: [4096]u8 = undefined;
             const nb_bytes = try self.sock.receive(&tmp_rbuf);
             if (nb_bytes == 0) {
@@ -268,3 +272,7 @@ pub const Client = struct {
         }
     }
 };
+
+test {
+    std.testing.refAllDecls(@This());
+}
