@@ -91,7 +91,7 @@ fn parse_log(msg: []const u8, idx: usize, allocator: std.mem.Allocator) !?Client
 
 fn parse_ok(msg: []const u8) ?ClientCommand {
     const rest = msg[2..]; // Skip the start
-    if (!utils.all_respect(u8, rest, std.ascii.isWhitespace))
+    if (!utils.is_all_whitespace(rest))
         return null;
     return .ResponseOK;
 }
