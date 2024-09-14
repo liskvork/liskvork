@@ -31,20 +31,53 @@ pub const ClientCommandLog = struct {
 };
 
 pub const ClientResponseAbout = struct {
+    const Self = @This();
+
     name: []const u8,
     version: ?[]const u8,
     author: ?[]const u8,
     country: ?[]const u8,
     www: ?[]const u8,
+    allocator: std.mem.Allocator,
+
+    fn init(opt: *const ClientResponseAboutOpt, allocator: std.mem.Allocator) Self {
+        std.debug.assert(opt.name != null);
+        return .{
+            .name = opt.name.?,
+            .version = opt.version,
+            .author = opt.author,
+            .country = opt.country,
+            .www = opt.www,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: *const Self) void {
+        self.allocator.free(self.name);
+        if (self.version) |v| self.allocator.free(v);
+        if (self.author) |v| self.allocator.free(v);
+        if (self.country) |v| self.allocator.free(v);
+        if (self.www) |v| self.allocator.free(v);
+    }
 };
 
 // The only different is the name being optional, to ease the parsing process
 const ClientResponseAboutOpt = struct {
+    const Self = @This();
+
     name: ?[]const u8 = null,
     version: ?[]const u8 = null,
     author: ?[]const u8 = null,
     country: ?[]const u8 = null,
     www: ?[]const u8 = null,
+
+    pub fn cleanup(self: *const Self, allocator: std.mem.Allocator) void {
+        if (self.name) |v| allocator.free(v);
+        if (self.version) |v| allocator.free(v);
+        if (self.author) |v| allocator.free(v);
+        if (self.country) |v| allocator.free(v);
+        if (self.www) |v| allocator.free(v);
+    }
 };
 
 const ClientResponseKO = struct {
@@ -73,11 +106,13 @@ pub const ClientCommand = union(enum) {
     ResponseOK: void,
     ResponseKO: ClientResponseKO,
     ResponsePosition: client.GamePosition,
+    ResponseAbout: ClientResponseAbout,
 
     pub fn deinit(self: Self) void {
         switch (self) {
             .CommandLog => |v| v.deinit(),
             .ResponseKO => |v| v.deinit(),
+            .ResponseAbout => |v| v.deinit(),
             else => {},
         }
     }
@@ -135,6 +170,53 @@ fn parse_ko(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
     };
 }
 
+// That is so ugly but I don't really have another idea right now
+// TODO: Make so it isn't complete garbage
+fn about_cleanup(out: *ClientResponseAboutOpt, allocator: std.mem.Allocator) ?ClientCommand {
+    out.cleanup(allocator);
+    return null;
+}
+
+fn map_kv_to_opt_about(k: []const u8, v: []const u8, out: *ClientResponseAboutOpt, allocator: std.mem.Allocator) !bool {
+    inline for (std.meta.fields(ClientResponseAboutOpt)) |f| {
+        if (std.mem.eql(u8, f.name, k)) {
+            @field(out, f.name) = if (v.len > 0) try allocator.dupe(u8, v) else null;
+            return true;
+        }
+    }
+    return false;
+}
+
+// TODO: Same here this is ultra ugly
+//
+// Parses something like the following (taken directly from the documentation)
+// name="SmortBrain",version="1.0",author="emneo",country="FR",www="emneo.dev"
+fn parse_about_response(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
+    var tmp = ClientResponseAboutOpt{};
+    var rest = std.mem.trim(u8, msg, &std.ascii.whitespace);
+    while (rest.len > 0) {
+        const equal_idx = std.mem.indexOf(u8, rest, "=") orelse return about_cleanup(&tmp, allocator);
+        const k = std.mem.trim(u8, rest[0..equal_idx], &std.ascii.whitespace);
+        rest = rest[equal_idx + 1 ..];
+        const start_quote = std.mem.indexOf(u8, rest, "\"") orelse return about_cleanup(&tmp, allocator);
+        rest = rest[start_quote + 1 ..];
+        const end_quote = std.mem.indexOf(u8, rest, "\"") orelse return about_cleanup(&tmp, allocator);
+        const v = rest[0..end_quote];
+        rest = std.mem.trim(u8, rest[end_quote + 1 ..], &std.ascii.whitespace);
+        if (!try map_kv_to_opt_about(k, v, &tmp, allocator))
+            return about_cleanup(&tmp, allocator);
+        if (rest.len == 0)
+            continue;
+        const next_comma = std.mem.indexOf(u8, rest, ",") orelse return about_cleanup(&tmp, allocator);
+        rest = std.mem.trim(u8, rest[next_comma + 1 ..], &std.ascii.whitespace);
+    }
+    if (tmp.name == null)
+        return about_cleanup(&tmp, allocator);
+    return .{
+        .ResponseAbout = ClientResponseAbout.init(&tmp, allocator),
+    };
+}
+
 pub fn parse(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
     for (log_starters, 0..) |s, i| {
         if (std.mem.startsWith(u8, msg, s))
@@ -144,12 +226,74 @@ pub fn parse(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
         return parse_ok(msg);
     if (std.mem.startsWith(u8, msg, "KO"))
         return try parse_ko(msg, allocator);
-    return null;
+    return try parse_about_response(msg, allocator);
 }
 
 // -------------------------
 // --------- TESTS ---------
 // -------------------------
+
+test "about name version www with extra character" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse(
+        "name   =\"    funny    \",\t\t      \t version\t =  \"1\t. 0\",www =       \"em\tneo.dev\" :3",
+        alloc,
+    );
+    try t.expect(cmd == null);
+}
+
+test "about name version www" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse(
+        "name   =\"    funny    \",\t\t      \t version\t =  \"1\t. 0\",www =       \"em\tneo.dev\"",
+        alloc,
+    );
+    try t.expect(cmd != null);
+    defer cmd.?.deinit();
+
+    try t.expectEqualDeep(cmd, ClientCommand{
+        .ResponseAbout = .{
+            .name = "    funny    ",
+            .country = null,
+            .www = "em\tneo.dev",
+            .author = null,
+            .version = "1\t. 0",
+            .allocator = alloc,
+        },
+    });
+}
+
+test "about version www" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("version=\"1.0\",www=\"emneo.dev\"", alloc);
+    try t.expect(cmd == null);
+}
+
+test "about just name" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("name=\"funny\"", alloc);
+    try t.expect(cmd != null);
+    defer cmd.?.deinit();
+
+    try t.expectEqualDeep(cmd, ClientCommand{
+        .ResponseAbout = .{
+            .name = "funny",
+            .country = null,
+            .www = null,
+            .author = null,
+            .version = null,
+            .allocator = alloc,
+        },
+    });
+}
 
 test "ko parsing" {
     const t = std.testing;
