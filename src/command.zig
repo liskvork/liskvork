@@ -89,12 +89,61 @@ fn parse_log(msg: []const u8, idx: usize, allocator: std.mem.Allocator) !?Client
     };
 }
 
+fn parse_ok(msg: []const u8) ?ClientCommand {
+    const rest = msg[2..]; // Skip the start
+    if (!utils.all_respect(u8, rest, std.ascii.isWhitespace))
+        return null;
+    return .ResponseOK;
+}
+
 pub fn parse(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
     for (log_starters, 0..) |s, i| {
         if (std.mem.startsWith(u8, msg, s))
             return parse_log(msg, i, allocator);
     }
+    if (std.mem.startsWith(u8, msg, "OK"))
+        return parse_ok(msg);
     return null;
+}
+
+// -------------------------
+// --------- TESTS ---------
+// -------------------------
+
+test "ok parsing" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("OK", alloc);
+
+    try t.expectEqualDeep(cmd, .ResponseOK);
+}
+
+test "ok parsing with whitespace" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("OK   \t\t    \t     ", alloc);
+
+    try t.expectEqualDeep(cmd, .ResponseOK);
+}
+
+test "bad ok parsing" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("OK YEAH THERE ARE SOME THINGS HERE", alloc);
+
+    try t.expectEqual(cmd, null);
+}
+
+test "bad ok parsing 2" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("OKYEAH THERE ARE SOME THINGS HERE", alloc);
+
+    try t.expectEqual(cmd, null);
 }
 
 test "debug log parsing" {
