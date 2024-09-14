@@ -154,5 +154,7 @@ pub fn build(b: *std.Build) !void {
     const unit_tests = configure_tests(b, opt, native_target, optimize);
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
+    // Uncomment ONLY if needed
+    // run_unit_tests.has_side_effects = true;
     test_step.dependOn(&run_unit_tests.step);
 }
