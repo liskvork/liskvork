@@ -47,17 +47,37 @@ const ClientResponseAboutOpt = struct {
     www: ?[]const u8 = null,
 };
 
+const ClientResponseKO = struct {
+    const Self = @This();
+
+    data: ?[]const u8,
+    allocator: std.mem.Allocator,
+
+    fn init(data: ?[]const u8, allocator: std.mem.Allocator) !Self {
+        return .{
+            .data = if (data) |d| try allocator.dupe(u8, d) else null,
+            .allocator = allocator,
+        };
+    }
+
+    pub fn deinit(self: Self) void {
+        if (self.data) |d|
+            self.allocator.free(d);
+    }
+};
+
 pub const ClientCommand = union(enum) {
     const Self = @This();
 
     CommandLog: ClientCommandLog,
     ResponseOK: void,
-    ResponseKO: ?[]const u8,
+    ResponseKO: ClientResponseKO,
     ResponsePosition: client.GamePosition,
 
     pub fn deinit(self: Self) void {
         switch (self) {
             .CommandLog => |v| v.deinit(),
+            .ResponseKO => |v| v.deinit(),
             else => {},
         }
     }
@@ -96,19 +116,93 @@ fn parse_ok(msg: []const u8) ?ClientCommand {
     return .ResponseOK;
 }
 
+fn parse_ko(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
+    const rest = msg[2..];
+
+    // Check if there is a message with the KO
+    if (utils.is_all_whitespace(rest))
+        return .{
+            .ResponseKO = try ClientResponseKO.init(null, allocator),
+        };
+
+    const ws_data = utils.skip_n_whitespace(rest, 1) catch {
+        return null;
+    };
+
+    const data = std.mem.trim(u8, ws_data, &std.ascii.whitespace);
+    return .{
+        .ResponseKO = try ClientResponseKO.init(data, allocator),
+    };
+}
+
 pub fn parse(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
     for (log_starters, 0..) |s, i| {
         if (std.mem.startsWith(u8, msg, s))
-            return parse_log(msg, i, allocator);
+            return try parse_log(msg, i, allocator);
     }
     if (std.mem.startsWith(u8, msg, "OK"))
         return parse_ok(msg);
+    if (std.mem.startsWith(u8, msg, "KO"))
+        return try parse_ko(msg, allocator);
     return null;
 }
 
 // -------------------------
 // --------- TESTS ---------
 // -------------------------
+
+test "ko parsing" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("KO", alloc);
+
+    try t.expectEqualDeep(cmd, ClientCommand{
+        .ResponseKO = .{
+            .data = null,
+            .allocator = alloc,
+        },
+    });
+}
+
+test "ko parsing with whitespace" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("KO   \t\t    \t     ", alloc);
+
+    try t.expectEqualDeep(cmd, ClientCommand{
+        .ResponseKO = .{
+            .data = null,
+            .allocator = alloc,
+        },
+    });
+}
+
+test "ko parsing with data" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("KO YEAH THERE ARE SOME THINGS HERE", alloc);
+    try t.expect(cmd != null);
+    defer cmd.?.deinit();
+
+    try t.expectEqualDeep(cmd, ClientCommand{
+        .ResponseKO = .{
+            .data = "YEAH THERE ARE SOME THINGS HERE",
+            .allocator = alloc,
+        },
+    });
+}
+
+test "bad ko parsing" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("KOYEAH THERE ARE SOME THINGS HERE", alloc);
+
+    try t.expectEqual(cmd, null);
+}
 
 test "ok parsing" {
     const t = std.testing;
