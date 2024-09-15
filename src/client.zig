@@ -103,10 +103,6 @@ pub const Client = struct {
         try self.send_message("OK\n");
     }
 
-    fn send_about(self: *Self) !void {
-        try self.send_message("ABOUT\n");
-    }
-
     fn send_info_no_check(self: *Self, T: type, name: []const u8, val: T, allocator: std.mem.Allocator) !void {
         switch (T) {
             u64 => try self.send_format_message("INFO {s} {}\n", .{ name, val }, allocator),
@@ -244,18 +240,25 @@ pub const Client = struct {
             switch (self.state) {
                 .WaitingForHandshake => unreachable,
                 .WaitingForRole => {
-                    if (std.mem.eql(u8, msg.data, "PLAYER")) {
+                    if (std.mem.startsWith(u8, msg.data, "PLAYER")) {
                         if (ctx.nb_players >= 2) {
                             try self.send_ko("Too many players connected", allocator);
                             logz.debug().ctx("Refused new player, because there are too many players already").log();
                             continue;
                         }
+                        const opt_cmd = try command.parse(msg.data[6..], allocator);
+                        if (opt_cmd == null or opt_cmd.? != .ResponseAbout) {
+                            try self.send_ko("Bad info syntax, try again", allocator);
+                            continue;
+                        }
+                        const cmd = opt_cmd.?.ResponseAbout;
+                        defer cmd.deinit();
                         self.ctype = ClientType.Player;
                         self.state = ClientState.PWaitingForAbout;
+                        self.infos = try cmd.dupe(allocator);
                         ctx.nb_players += 1;
                         try self.send_ok();
                         try self.send_all_infos(ctx, allocator);
-                        try self.send_about();
                     } else if (std.mem.eql(u8, msg.data, "SPECTATOR")) {
                         if (ctx.conf.other_spectator_slots != 0 and ctx.nb_spectators >= ctx.conf.other_spectator_slots) {
                             try self.send_ko("Too many spectators connected, try later", allocator);
