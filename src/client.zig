@@ -14,8 +14,10 @@ const ClientState = enum {
     WaitingForHandshake,
     WaitingForRole,
     SWaitingForStart,
-    PWaitingForStart,
     PWaitingForAbout,
+    PWaitingForStart,
+    PWaitingForOtherPlayer,
+    PWaitingForTurn,
 };
 
 const ClientType = enum {
@@ -51,14 +53,18 @@ pub const Client = struct {
     state: ClientState = ClientState.WaitingForHandshake,
     ctype: ?ClientType = null,
     infos: ?command.ClientResponseAbout = null,
+    allocator: std.mem.Allocator,
 
-    pub fn init(allocator: std.mem.Allocator, sock: net.Socket) Client {
-        return .{
+    pub fn init(allocator: std.mem.Allocator, sock: net.Socket) !*Client {
+        const c = try allocator.create(Self);
+        c.* = .{
             .sock = sock,
             .msg = std.ArrayList(Message).init(allocator),
             .internal_rbuffer = std.ArrayList(u8).init(allocator),
             .internal_wbuffer = std.ArrayList(u8).init(allocator),
+            .allocator = allocator,
         };
+        return c;
     }
 
     pub fn create_messages(self: *Self, allocator: std.mem.Allocator) !void {
@@ -155,6 +161,11 @@ pub const Client = struct {
 
     fn send_end(self: *Self, status: EndStatus, msg: ?[]const u8, allocator: std.mem.Allocator) !void {
         try self.send_end_no_check(@tagName(status), msg, allocator);
+    }
+
+    pub fn start(self: *Self, ctx: *const server.Context, allocator: std.mem.Allocator) !void {
+        try self.send_start(ctx, allocator);
+        self.state = ClientState.PWaitingForOtherPlayer;
     }
 
     fn handle_log(self: *Self, l: *const command.ClientCommandLog) void {
@@ -319,6 +330,7 @@ pub const Client = struct {
         }
         if (self.infos) |i|
             i.deinit();
+        self.allocator.destroy(self);
     }
 };
 
