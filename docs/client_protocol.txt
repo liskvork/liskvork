@@ -27,24 +27,6 @@ game.
 ---
 
 s2c
-ABOUT
-
-The client is expected to send back some information about itself on a single
-line. Each different info MUST be comma-separated and all by in the form
-KEY="VALUE".
-
-The available keys are name, version, author, country, www, email.
-The only mandatory field is name while the rest is completely optional.
-
-Example:
- The server sends:
-  ABOUT
- The client answers:
-  name="SmortBrain",version="1.0",author="emneo",country="FR",www="emneo.dev"
-
----
-
-s2c
 INFO [key] [value]
 
 The server MAY send some informations about the current state of the game as
@@ -84,6 +66,13 @@ If the client answers with SPECTATOR it MUST then only use the protocol defined
 in the gui_protocol.txt file, but if it answers PLAYER then it MUST answer to
 the following protocol.
 
+If the client chooses PLAYER it is expected to send back some information about
+itself on a single line. Each different info MUST be comma-separated and all by
+in the form KEY="VALUE".
+
+The available keys are name, version, author, country, www, email.
+The only mandatory field is name while the rest is completely optional.
+
 Once the client has answered the server MUST answer with either OK or KO, the
 latter accepting an OPTIONAL message with it
 
@@ -95,10 +84,10 @@ Example:
  The server sends:
   OK
 
- The serber sends:
+ The server sends:
   HELLO really_cool_name 1.2.3 ""
  The client answers:
-  PLAYER
+  PLAYER name="SmortBrain",version="1.0",author="emneo",country="FR",www="emneo.dev"
  The server sends:
   KO Too many players connected
 
@@ -224,6 +213,12 @@ Example:
 -----
 
 Version history
+
+2024-09-15
+Merge of the ABOUT command and the handshake, it made much more sense to do so
+and also makes implementation much easier, because players could be taking a
+slot while also not having given any informations yet, which could easily be
+exploited.
 
 2024-09-11
 Initial creation of the protocol mainly taken from the official Gomoku
