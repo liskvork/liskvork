@@ -9,6 +9,7 @@ const Message = @import("message.zig").Message;
 const server = @import("server.zig");
 const utils = @import("utils.zig");
 const command = @import("command.zig");
+const game = @import("game.zig");
 
 const ClientState = enum {
     WaitingForHandshake,
@@ -31,9 +32,6 @@ const ServerInfo = union(enum) {
     max_memory: u64,
     time_left: u64,
 };
-
-// TODO: Move that to another file
-pub const GamePosition = @Vector(2, u32);
 
 const EndStatus = enum {
     WIN,
@@ -142,7 +140,7 @@ pub const Client = struct {
         try self.send_message("BEGIN\n");
     }
 
-    fn send_turn(self: *Self, pos: GamePosition, allocator: std.mem.Allocator) !void {
+    fn send_turn(self: *Self, pos: game.Position, allocator: std.mem.Allocator) !void {
         try self.send_format_message("TURN {},{}\n", .{ pos[0], pos[1] }, allocator);
     }
 
@@ -151,7 +149,7 @@ pub const Client = struct {
     }
 
     fn send_end_no_check(self: *Self, status: []const u8, msg: ?[]const u8, allocator: std.mem.Allocator) !void {
-        try self.send_format_message("END {} \"{}\"\n", .{ status, msg orelse "" }, allocator);
+        try self.send_format_message("END {s} \"{s}\"\n", .{ status, msg orelse "" }, allocator);
     }
 
     fn send_end(self: *Self, status: EndStatus, msg: ?[]const u8, allocator: std.mem.Allocator) !void {
@@ -212,6 +210,18 @@ pub const Client = struct {
             .PWaitingForTurn => {
                 switch (cmd) {
                     .ResponsePosition => |v| {
+                        const has_won = ctx.board.place(v, game.MoveType.from_idx(self.player_cache_idx.?)) catch |e| {
+                            switch (e) {
+                                error.OutOfBound => try self.send_ko("Position out of bounds, try again...", allocator),
+                                error.AlreadyTaken => try self.send_ko("Cell already taken, try again...", allocator),
+                            }
+                            return;
+                        };
+                        if (has_won) {
+                            try self.send_end(.WIN, "You got 5 in a row, GG! :3", allocator);
+                            try ctx.cache.players[(self.player_cache_idx.? + 1) % 2].?.send_end(.LOSE, "Your opponent got 5 in a row :(", allocator);
+                            return;
+                        }
                         try ctx.cache.players[(self.player_cache_idx.? + 1) % 2].?.send_turn(v, allocator);
                         ctx.cache.players[(self.player_cache_idx.? + 1) % 2].?.state = .PWaitingForTurn;
                         self.state = .PWaitingForOtherPlayer;

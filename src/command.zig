@@ -2,6 +2,7 @@ const std = @import("std");
 
 const utils = @import("utils.zig");
 const client = @import("client.zig");
+const game = @import("game.zig");
 
 pub const ClientCommandLogType = enum {
     Info,
@@ -116,7 +117,7 @@ pub const ClientCommand = union(enum) {
     CommandLog: ClientCommandLog,
     ResponseOK: void,
     ResponseKO: ClientResponseKO,
-    ResponsePosition: client.GamePosition,
+    ResponsePosition: game.Position,
     ResponseAbout: ClientResponseAbout,
 
     pub fn deinit(self: Self) void {
