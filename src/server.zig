@@ -47,6 +47,7 @@ pub const Context = struct {
     nb_players: u8 = 0,
     nb_spectators: u8 = 0,
     game_launched: bool = false,
+    players_accepted: bool = false,
 
     pub fn init(allocator: std.mem.Allocator, conf: *const config.config, is_ipv6: bool) !Context {
         return .{
@@ -101,7 +102,7 @@ pub fn launch_server(conf: *const config.config, allocator: std.mem.Allocator) !
     var set = try net.SocketSet.init(allocator);
     defer set.deinit();
 
-    while (ctx.running) {
+    main: while (ctx.running) {
         try setup_socket_set(&ctx, &set);
         const evt_return = try net.waitForSocketEvent(&set, null);
         const has_timeout_been_reached = evt_return == 0;
@@ -123,16 +124,28 @@ pub fn launch_server(conf: *const config.config, allocator: std.mem.Allocator) !
             i += 1;
         }
         try handle_commands(&ctx, allocator);
+        if (ctx.game_launched and !ctx.players_accepted) {
+            for (ctx.cache.players) |p| {
+                std.debug.assert(p != null);
+                if (p.?.state == .PWaitingForStartAnswer)
+                    continue :main;
+            }
+            ctx.players_accepted = true;
+            try ctx.cache.players[0].?.begin();
+        }
         if (!ctx.game_launched and ctx.nb_players == 2) {
             var p_idx: usize = 0;
             for (ctx.clients.items) |c| {
                 if (c.ctype == .Player) {
                     ctx.cache.players[p_idx] = c;
+                    c.player_cache_idx = p_idx;
                     p_idx += 1;
                 }
             }
             std.debug.assert(p_idx == 2);
             ctx.game_launched = true;
+            try ctx.cache.players[0].?.start(&ctx, allocator);
+            try ctx.cache.players[1].?.start(&ctx, allocator);
         }
     }
 }
