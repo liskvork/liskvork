@@ -11,6 +11,7 @@ const utils = @import("utils.zig");
 const config = @import("config.zig");
 const client = @import("client.zig");
 const Client = client.Client;
+const game = @import("game.zig");
 
 const Cache = struct {
     const Self = @This();
@@ -48,6 +49,7 @@ pub const Context = struct {
     nb_spectators: u8 = 0,
     game_launched: bool = false,
     players_accepted: bool = false,
+    board: game.Game,
 
     pub fn init(allocator: std.mem.Allocator, conf: *const config.config, is_ipv6: bool) !Context {
         return .{
@@ -58,6 +60,7 @@ pub const Context = struct {
                 net.Protocol.tcp,
             ),
             .cache = try Cache.init(conf, allocator),
+            .board = try game.Game.init(allocator, conf.game_board_size),
         };
     }
 
@@ -67,6 +70,7 @@ pub const Context = struct {
         }
         self.clients.deinit();
         self.cache.deinit();
+        self.board.deinit();
     }
 };
 
