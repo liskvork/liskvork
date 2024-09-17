@@ -228,6 +228,23 @@ fn parse_about_response(msg: []const u8, allocator: std.mem.Allocator) !?ClientC
     };
 }
 
+fn parse_turn(msg: []const u8) ?ClientCommand {
+    const num_commas = std.mem.count(u8, msg, ",");
+    if (num_commas != 1)
+        return null;
+    const comma_idx = std.mem.indexOf(u8, msg, ",");
+    // The comma is at the end of the message, can't parse
+    if (comma_idx.? + 1 == msg.len)
+        return null;
+    const first_num_slice = std.mem.trim(u8, msg[0..comma_idx.?], &std.ascii.whitespace);
+    const second_num_slice = std.mem.trim(u8, msg[comma_idx.? + 1 ..], &std.ascii.whitespace);
+    const first_num = std.fmt.parseInt(u32, first_num_slice, 10) catch return null;
+    const second_num = std.fmt.parseInt(u32, second_num_slice, 10) catch return null;
+    return ClientCommand{
+        .ResponsePosition = .{ first_num, second_num },
+    };
+}
+
 pub fn parse(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
     for (log_starters, 0..) |s, i| {
         if (std.mem.startsWith(u8, msg, s))
@@ -237,7 +254,10 @@ pub fn parse(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
         return parse_ok(msg);
     if (std.mem.startsWith(u8, msg, "KO"))
         return try parse_ko(msg, allocator);
-    return try parse_about_response(msg, allocator);
+    const tmp = try parse_about_response(msg, allocator);
+    if (tmp != null)
+        return tmp;
+    return parse_turn(msg);
 }
 
 // -------------------------
@@ -276,6 +296,38 @@ test "about name version www" {
             .allocator = alloc,
         },
     });
+}
+
+test "turn 0,0" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("0,0", alloc);
+    try t.expect(cmd != null);
+
+    try t.expectEqualDeep(cmd, ClientCommand{
+        .ResponsePosition = .{ 0, 0 },
+    });
+}
+
+test "turn 13,42" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("13  \t ,  \t \t42", alloc);
+    try t.expect(cmd != null);
+
+    try t.expectEqualDeep(cmd, ClientCommand{
+        .ResponsePosition = .{ 13, 42 },
+    });
+}
+
+test "turn 0,0,0 fail" {
+    const t = std.testing;
+    const alloc = t.allocator;
+
+    const cmd = try parse("0,0,0", alloc);
+    try t.expect(cmd == null);
 }
 
 test "about version www" {

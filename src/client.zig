@@ -14,8 +14,8 @@ const ClientState = enum {
     WaitingForHandshake,
     WaitingForRole,
     SWaitingForStart,
-    PWaitingForAbout,
     PWaitingForStart,
+    PWaitingForStartAnswer,
     PWaitingForOtherPlayer,
     PWaitingForTurn,
 };
@@ -54,6 +54,7 @@ pub const Client = struct {
     ctype: ?ClientType = null,
     infos: ?command.ClientResponseAbout = null,
     allocator: std.mem.Allocator,
+    player_cache_idx: ?usize = null,
 
     pub fn init(allocator: std.mem.Allocator, sock: net.Socket) !*Client {
         const c = try allocator.create(Self);
@@ -129,8 +130,6 @@ pub const Client = struct {
         try self.send_info(.{ .timeout_turn = ctx.conf.game_timeout_turn }, allocator);
         try self.send_info(.{ .timeout_match = ctx.conf.game_timeout_match }, allocator);
         try self.send_info(.{ .max_memory = ctx.conf.game_max_memory }, allocator);
-        // TODO: Put the actual value
-        try self.send_info(.{ .time_left = 0 }, allocator);
     }
 
     fn send_ko(self: *Self, msg: ?[]const u8, allocator: std.mem.Allocator) !void {
@@ -161,7 +160,12 @@ pub const Client = struct {
 
     pub fn start(self: *Self, ctx: *const server.Context, allocator: std.mem.Allocator) !void {
         try self.send_start(ctx, allocator);
-        self.state = ClientState.PWaitingForOtherPlayer;
+        self.state = ClientState.PWaitingForStartAnswer;
+    }
+
+    pub fn begin(self: *Self) !void {
+        try self.send_begin();
+        self.state = .PWaitingForTurn;
     }
 
     fn handle_log(self: *Self, l: *const command.ClientCommandLog) void {
@@ -180,35 +184,44 @@ pub const Client = struct {
             return;
         };
         defer cmd.deinit();
-        _ = ctx;
 
         // We only accept logs after getting the client's name
-        if (self.state != .PWaitingForAbout) {
-            std.debug.assert(self.infos != null);
-            switch (cmd) {
-                .CommandLog => |v| return handle_log(self, &v),
-                else => {},
-            }
+        std.debug.assert(self.infos != null);
+        switch (cmd) {
+            .CommandLog => |v| return handle_log(self, &v),
+            else => {},
         }
 
         switch (self.state) {
-            .PWaitingForAbout => {
+            .PWaitingForStartAnswer => {
                 switch (cmd) {
-                    .ResponseAbout => |v| {
-                        // It looks like there should be a feedback to the client
-                        // TODO: Modify the spec for that, maybe even merge the
-                        // about and initial role choice (Sounds better)
-                        self.infos = try v.dupe(allocator);
-                        self.state = .PWaitingForStart;
-                        logz.info().ctx("New player").string("name", self.infos.?.name).log();
+                    .ResponseOK => {
+                        logz.debug().ctx("client ok start").string("name", self.infos.?.name).log();
+                        self.state = .PWaitingForOtherPlayer;
+                    },
+                    .ResponseKO => |v| {
+                        logz.fatal().ctx("client ko start").string("name", self.infos.?.name).string("reason", v.data).log();
+                        @panic("what do I do now? :(");
                     },
                     else => {
-                        try self.send_ko("Incorrect answer to ABOUT, try again", allocator);
-                        return;
+                        try self.send_ko("Not what you need to answer... Try again :3", allocator);
                     },
                 }
             },
             .PWaitingForStart => {},
+            .PWaitingForTurn => {
+                switch (cmd) {
+                    .ResponsePosition => |v| {
+                        try ctx.cache.players[(self.player_cache_idx.? + 1) % 2].?.send_turn(v, allocator);
+                        ctx.cache.players[(self.player_cache_idx.? + 1) % 2].?.state = .PWaitingForTurn;
+                        self.state = .PWaitingForOtherPlayer;
+                    },
+                    else => {
+                        try self.send_ko("Not what you need to answer... Try again :3", allocator);
+                    },
+                }
+            },
+            .PWaitingForOtherPlayer => try self.send_ko("Wait for the other player to play >:(", allocator),
             else => unreachable,
         }
     }
@@ -254,7 +267,7 @@ pub const Client = struct {
                         const cmd = opt_cmd.?.ResponseAbout;
                         defer cmd.deinit();
                         self.ctype = ClientType.Player;
-                        self.state = ClientState.PWaitingForAbout;
+                        self.state = ClientState.PWaitingForStart;
                         self.infos = try cmd.dupe(allocator);
                         ctx.nb_players += 1;
                         try self.send_ok();
