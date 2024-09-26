@@ -1,6 +1,6 @@
 # liskvork
 
-Modern multi-platform piskvork reimplementation.
+Modern multi-platform gomoku game server.
 
 Linux, Windows and MacOS support (with priority to Linux) on both x86_64 and
 aarch64.
