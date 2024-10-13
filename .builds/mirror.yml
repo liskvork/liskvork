@@ -1,0 +1,11 @@
+image: alpine/edge
+secrets:
+  - 6de86795-1f2d-4a94-aa5a-611eac854572
+environment:
+  REPO: liskvork
+  GH_USER: liskvork
+tasks:
+  - push-to-github: |
+      cd ~/"${REPO}"
+      git config --global credential.helper store
+      git push --mirror "https://github.com/${GH_USER}/${REPO}"
