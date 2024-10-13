@@ -5,6 +5,8 @@ Modern multi-platform gomoku game server.
 Linux, Windows and MacOS support (with priority to Linux) on both x86_64 and
 aarch64.
 
+[![builds.sr.ht status](https://builds.sr.ht/~emneo/liskvork.svg)](https://builds.sr.ht/~emneo/liskvork?)
+
 ## Building from source
 
 ### Docker
@@ -27,17 +29,10 @@ zig build -Doptimize=ReleaseSafe
 
 ## Installing
 
-TBD
+Get the binary from https://releases.liskvork.org and then just launch it with
+the default config.
 
 ## Launching liskvork
-
-### System package
-
-Just launch liskvork like this:
-
-```sh
-liskvork
-```
 
 ### From source build
 
