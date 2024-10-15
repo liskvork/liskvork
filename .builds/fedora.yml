@@ -4,7 +4,7 @@ packages:
 tasks:
   - build: |
       cd liskvork
-      zig build -Doptimize=ReleaseSafe -Dbuild_all -Dversion=0.0.0-dev --summary all
+      zig build -Dbuild_all -Dversion=0.0.0-dev --summary all
   - test: |
       cd liskvork
       zig build test --summary all
