@@ -1,11 +1,25 @@
 # liskvork
 
+[![builds.sr.ht status](https://builds.sr.ht/~emneo/liskvork.svg)](https://builds.sr.ht/~emneo/liskvork)
+
 Modern multi-platform gomoku game server.
 
 Linux, Windows and MacOS support (with priority to Linux) on both x86_64 and
 aarch64.
 
-[![builds.sr.ht status](https://builds.sr.ht/~emneo/liskvork.svg)](https://builds.sr.ht/~emneo/liskvork?)
+Main repository URL: <https://git.sr.ht/~emneo/liskvork>
+
+## Reporting bugs/Submitting patches
+
+You can see open tickets over at [here](https://todo.sr.ht/~emneo/liskvork).
+
+You can submit bug reports and patches over at the [mailing lists]
+(https://sr.ht/~emneo/liskvork/lists) (yes that means sending a mail, it is not
+hard.)
+
+The ticket board is only opened to maintainers, so if you need to report a bug
+do it on the mailing lists, if the bug report is accepted it will be listed in
+the ticket board.
 
 ## Building from source
 
@@ -50,4 +64,5 @@ VERSION=1.0.0 docker run liskvork:${VERSION}
 
 ## Configuration
 
-TBD
+Look at the default `config.ini` everything (should) be documented properly to
+configure it.
