@@ -12,13 +12,6 @@ linkFarm "zig-packages" [
     };
   }
   {
-    name = "12203b3634f36570ffced059248bd429cd06dc89a98659c86569d890fdd99b5070bd";
-    path = fetchzip {
-      url = "https://github.com/ikskuh/zig-network/archive/bcf6cc8918d574f947b2647522d84a805c33f1c8.tar.gz";
-      hash = "sha256-QtlJwMQ9GZTuxdCCsCMbOudxdRYYdeMe8WL+p8GDLOU=";
-    };
-  }
-  {
     name = "12206f5d1e5bd4793fe952bbae891b7424a19026e0d296a1381074c7d21d5d76c1a1";
     path = fetchzip {
       url = "https://github.com/karlseguin/zul/archive/08c989bf6871e87807a4668232913ee245425863.tar.gz";
