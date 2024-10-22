@@ -2,19 +2,15 @@ const std = @import("std");
 
 const logz = @import("logz");
 const ini = @import("ini");
-const net = @import("network");
+const utils = @import("utils.zig");
 
 // Add to this structure to automatically add to the config
 pub const config = struct {
-    network_ip: net.Address,
-    network_port: u16,
-
     game_board_size: u32,
     game_timeout_match: u64,
     game_timeout_turn: u64,
     game_max_memory: u64,
 
-    other_spectator_slots: i32,
     other_motd: []const u8,
 
     log_level: logz.Level,
@@ -110,7 +106,6 @@ fn map_value(kv: ini_field, conf: *tmp_config, allocator: std.mem.Allocator) !vo
             // Handle other types
             @field(conf, f.name) = switch (target_type) {
                 u16, u32, u64, i16, i32, i64 => try std.fmt.parseInt(target_type, kv.value, 0),
-                net.Address => try net.Address.parse(kv.value),
                 []const u8 => try allocator.dupe(u8, kv.value),
                 else => @compileError("You probably need to implement parsing for " ++ @typeName(target_type) ++ " :3"),
             };
@@ -120,22 +115,22 @@ fn map_value(kv: ini_field, conf: *tmp_config, allocator: std.mem.Allocator) !vo
     return ConfigError.UnknownKey;
 }
 
-pub fn parse(filepath: []const u8, allocator: std.mem.Allocator) !config {
+pub fn parse(filepath: []const u8) !config {
     const file = try std.fs.cwd().openFile(filepath, .{});
     defer file.close();
 
     // That currently does read calls of size 1 for the whole parsing
     // Not really good but for now it is good
     // TODO: Patch this
-    var parser = ini.parse(allocator, file.reader(), ";#");
+    var parser = ini.parse(utils.allocator, file.reader(), ";#");
     defer parser.deinit();
 
     var current_section: ?[]const u8 = null;
     defer {
         if (current_section) |sec|
-            allocator.free(sec);
+            utils.allocator.free(sec);
     }
-    var fields = std.ArrayList(ini_field).init(allocator);
+    var fields = std.ArrayList(ini_field).init(utils.allocator);
     defer {
         for (fields.items) |f|
             f.deinit();
@@ -146,22 +141,22 @@ pub fn parse(filepath: []const u8, allocator: std.mem.Allocator) !config {
         switch (record) {
             .section => |heading| {
                 if (current_section) |sec|
-                    allocator.free(sec);
-                current_section = try allocator.dupe(u8, heading);
+                    utils.allocator.free(sec);
+                current_section = try utils.allocator.dupe(u8, heading);
             },
-            .property => |kv| try fields.append(try ini_field.init(current_section, kv, allocator)),
+            .property => |kv| try fields.append(try ini_field.init(current_section, kv, utils.allocator)),
             .enumeration => |_| @panic("No support for enumerations"),
         }
     }
     for (fields.items) |f|
-        try map_value(f, &tmp, allocator);
+        try map_value(f, &tmp, utils.allocator);
     return map_opt_struct_to_struct(tmp_config, config, &tmp);
 }
 
-pub fn deinit_config(t: type, conf: *const t, allocator: std.mem.Allocator) void {
+pub fn deinit_config(t: type, conf: *const t) void {
     inline for (std.meta.fields(@TypeOf(conf.*))) |f| {
         switch (f.type) {
-            []const u8 => allocator.free(@field(conf, f.name)),
+            []const u8 => utils.allocator.free(@field(conf, f.name)),
             else => {},
         }
     }

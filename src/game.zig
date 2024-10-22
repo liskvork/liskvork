@@ -1,6 +1,8 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
+const utils = @import("utils.zig");
+
 const CellState = enum {
     Empty,
     Player1,
@@ -39,15 +41,13 @@ pub const Error = error{
 pub const Game = struct {
     const Self = @This();
 
-    allocator: std.mem.Allocator,
     size: u32,
     board: []CellState,
 
-    pub fn init(allocator: Allocator, size: u32) Allocator.Error!Game {
-        const b = try allocator.alloc(CellState, size * size);
+    pub fn init(size: u32) Allocator.Error!Game {
+        const b = try utils.allocator.alloc(CellState, size * size);
         @memset(b, .Empty);
         return .{
-            .allocator = allocator,
             .size = size,
             .board = b,
         };
@@ -122,7 +122,7 @@ pub const Game = struct {
     }
 
     pub fn deinit(self: *const Self) void {
-        self.allocator.free(self.board);
+        utils.allocator.free(self.board);
     }
 };
 
