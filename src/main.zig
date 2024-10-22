@@ -13,27 +13,22 @@ const utils = @import("utils.zig");
 pub fn main() !void {
     const start_time = std.time.milliTimestamp();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{
-        .safety = utils.is_debug_build,
-        .verbose_log = false, // abandon hope all ye who enter here
-    }){};
     defer {
         // Don't panic in release builds, that should only be needed in debug
-        if (gpa.deinit() != .ok and utils.is_debug_build)
+        if (utils.gpa.deinit() != .ok and utils.is_debug_build)
             @panic("memory leaked");
     }
-    const allocator = gpa.allocator();
 
-    try logz.setup(allocator, .{
+    try logz.setup(utils.allocator, .{
         .level = .Error,
         .output = .stdout,
         .encoding = .logfmt,
     });
 
-    const conf = try config.parse("config.ini", allocator);
-    defer config.deinit_config(config.config, &conf, allocator);
+    const conf = try config.parse("config.ini");
+    defer config.deinit_config(config.config, &conf);
 
-    try logz.setup(allocator, .{
+    try logz.setup(utils.allocator, .{
         .level = conf.log_level,
         .output = .stdout,
         .encoding = .logfmt,
@@ -42,7 +37,7 @@ pub fn main() !void {
 
     logz.info().ctx("Launching liskvork").stringSafe("version", build_config.version).log();
 
-    try server.launch_server(&conf, allocator);
+    try server.launch_server(&conf);
 
     const close_time = std.time.milliTimestamp();
     const uptime = try zul.DateTime.fromUnix(close_time - start_time, .milliseconds);

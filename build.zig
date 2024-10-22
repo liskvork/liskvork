@@ -41,7 +41,6 @@ const build_options = struct {
 fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, opt: build_options) void {
     const ini_pkg = b.dependency("ini", .{ .target = target, .optimize = optimize });
     const logz_pkg = b.dependency("logz", .{ .target = target, .optimize = optimize });
-    const net_pkg = b.dependency("network", .{ .target = target, .optimize = optimize });
     const zul_pkg = b.dependency("zul", .{ .target = target, .optimize = optimize });
 
     const options = b.addOptions();
@@ -52,7 +51,6 @@ fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.B
     bin.root_module.addOptions("build_config", options);
     bin.root_module.addImport("ini", ini_pkg.module("ini"));
     bin.root_module.addImport("logz", logz_pkg.module("logz"));
-    bin.root_module.addImport("network", net_pkg.module("network"));
     bin.root_module.addImport("zul", zul_pkg.module("zul"));
 }
 
