@@ -124,7 +124,7 @@ pub fn parse(filepath: []const u8) !Config {
                 logz.warn().ctx("Config file not found! Creating...").string("filepath", filepath).log();
                 const tmp = try std.fs.cwd().createFile(
                     filepath,
-                    .{ .read = true },
+                    .{},
                 );
                 defer tmp.close();
                 _ = try tmp.writeAll(default_config);
