@@ -8,6 +8,7 @@ const server = @import("server.zig");
 const utils = @import("utils.zig");
 const command = @import("command.zig");
 const game = @import("game.zig");
+const config = @import("config.zig");
 
 const ClientState = enum {
     WaitingForHandshake,
@@ -44,10 +45,21 @@ pub const Client = struct {
     stopping: bool = false,
     state: ClientState = ClientState.WaitingForHandshake,
     infos: ?command.ClientResponseAbout = null,
+    filepath: []const u8,
+    match_time_remaining: u64,
+    turn_time: u64,
 
     // TODO: Init properly with a pipe communication
-    pub fn init(filepath: []const u8) !Client {
-        _ = filepath;
+    pub fn init(filepath: []const u8, conf: *const config.Config) !Client {
+        return .{
+            .filepath = try utils.allocator.dupe(u8, filepath),
+            .match_time_remaining = conf.game_timeout_match,
+            .turn_time = conf.game_timeout_turn,
+        };
+    }
+
+    pub fn start_process(self: *Self) !void {
+        _ = self;
     }
 
     fn send_message(self: *Self, msg: []const u8) !void {
@@ -154,6 +166,7 @@ pub const Client = struct {
     pub fn deinit(self: *const Self) void {
         if (self.infos) |i|
             i.deinit();
+        utils.allocator.free(self.filepath);
     }
 };
 
