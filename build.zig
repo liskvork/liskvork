@@ -35,7 +35,6 @@ const build_options = struct {
     version: []const u8,
     build_all: bool,
     bin_name: []const u8,
-    net_max_read_size: usize,
 };
 
 fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, opt: build_options) void {
@@ -46,7 +45,6 @@ fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.B
     const options = b.addOptions();
     options.addOption([]const u8, "version", opt.version);
     options.addOption([]const u8, "bin_name", opt.bin_name);
-    options.addOption(usize, "net_max_read_size", opt.net_max_read_size);
 
     bin.root_module.addOptions("build_config", options);
     bin.root_module.addImport("ini", ini_pkg.module("ini"));
@@ -110,11 +108,6 @@ fn set_build_options(b: *std.Build) build_options {
             "bin_name",
             "base bin name",
         ) orelse "liskvork",
-        .net_max_read_size = b.option(
-            usize,
-            "net_max_read_size",
-            "maximum size for network reads",
-        ) orelse 4096,
     };
 }
 

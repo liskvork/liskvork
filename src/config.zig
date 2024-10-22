@@ -5,7 +5,7 @@ const ini = @import("ini");
 const utils = @import("utils.zig");
 
 // Add to this structure to automatically add to the config
-pub const config = struct {
+pub const Config = struct {
     game_board_size: u32,
     game_timeout_match: u64,
     game_timeout_turn: u64,
@@ -15,6 +15,8 @@ pub const config = struct {
 
     log_level: logz.Level,
 };
+
+pub const default_config = @embedFile("default_config.ini");
 
 pub const ConfigError = error{
     UnknownKey,
@@ -46,7 +48,7 @@ fn make_opt_struct(comptime in: type) type {
     });
 }
 
-const tmp_config = make_opt_struct(config);
+const tmp_config = make_opt_struct(Config);
 
 const ini_field = struct {
     const Self = @This();
@@ -115,7 +117,21 @@ fn map_value(kv: ini_field, conf: *tmp_config, allocator: std.mem.Allocator) !vo
     return ConfigError.UnknownKey;
 }
 
-pub fn parse(filepath: []const u8) !config {
+pub fn parse(filepath: []const u8) !Config {
+    std.fs.cwd().access(filepath, .{}) catch |e| {
+        switch (e) {
+            error.FileNotFound => {
+                logz.warn().ctx("Config file not found! Creating...").string("filepath", filepath).log();
+                const tmp = try std.fs.cwd().createFile(
+                    filepath,
+                    .{ .read = true },
+                );
+                defer tmp.close();
+                _ = try tmp.writeAll(default_config);
+            },
+            else => return e,
+        }
+    };
     const file = try std.fs.cwd().openFile(filepath, .{});
     defer file.close();
 
@@ -150,7 +166,7 @@ pub fn parse(filepath: []const u8) !config {
     }
     for (fields.items) |f|
         try map_value(f, &tmp, utils.allocator);
-    return map_opt_struct_to_struct(tmp_config, config, &tmp);
+    return map_opt_struct_to_struct(tmp_config, Config, &tmp);
 }
 
 pub fn deinit_config(t: type, conf: *const t) void {
