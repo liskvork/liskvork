@@ -7,3 +7,6 @@ result
 .direnv
 .envrc
 .pre-commit-config.yaml
+
+# Config created by liskvork at runtime
+config.ini
