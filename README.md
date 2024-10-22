@@ -64,5 +64,5 @@ VERSION=1.0.0 docker run liskvork:${VERSION}
 
 ## Configuration
 
-Look at the default `config.ini` everything (should) be documented properly to
-configure it.
+Look at the default `config.ini` that's created when launching for the first
+time everything (should) be documented properly to configure it.
