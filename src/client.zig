@@ -41,7 +41,7 @@ pub const Client = struct {
     proc: std.process.Child = undefined,
     read_buf: std.ArrayList(u8),
 
-    pub fn init(filepath: []const u8, conf: *const config.Config) Allocator.Error!Client {
+    pub fn init(filepath: []const u8, conf: *const config.Config) !Client {
         return .{
             .filepath = try utils.allocator.dupe(u8, filepath),
             .match_time_remaining = conf.game_timeout_match,
