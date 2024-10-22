@@ -20,20 +20,20 @@ pub fn main() !void {
     }
 
     try logz.setup(utils.allocator, .{
-        .level = .Error,
+        .level = .Warn,
         .output = .stdout,
         .encoding = .logfmt,
     });
+    defer logz.deinit();
 
     const conf = try config.parse("config.ini");
-    defer config.deinit_config(config.config, &conf);
+    defer config.deinit_config(config.Config, &conf);
 
     try logz.setup(utils.allocator, .{
         .level = conf.log_level,
         .output = .stdout,
         .encoding = .logfmt,
     });
-    defer logz.deinit();
 
     logz.info().ctx("Launching liskvork").stringSafe("version", build_config.version).log();
 
