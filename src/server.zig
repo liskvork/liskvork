@@ -3,7 +3,6 @@ const builtin = @import("builtin");
 const std = @import("std");
 
 const logz = @import("logz");
-const net = @import("network");
 
 const build_config = @import("build_config");
 
