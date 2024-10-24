@@ -10,20 +10,7 @@ const command = @import("command.zig");
 const game = @import("game.zig");
 const config = @import("config.zig");
 
-const ClientState = enum {
-    WaitingForHandshake,
-    WaitingForRole,
-    SWaitingForStart,
-    PWaitingForStart,
-    PWaitingForStartAnswer,
-    PWaitingForOtherPlayer,
-    PWaitingForTurn,
-};
-
-const ClientType = enum {
-    Player,
-    Spectator,
-};
+const Allocator = std.mem.Allocator;
 
 const ServerInfo = union(enum) {
     timeout_turn: u64,
@@ -47,25 +34,24 @@ pub const Client = struct {
     const Self = @This();
 
     stopping: bool = false,
-    state: ClientState = ClientState.WaitingForHandshake,
     infos: ?command.ClientResponseAbout = null,
     filepath: []const u8,
     match_time_remaining: u64,
     turn_time: u64,
-    proc: std.process.Child,
+    proc: std.process.Child = undefined,
     read_buf: std.ArrayList(u8),
 
-    pub fn init(filepath: []const u8, conf: *const config.Config) !Client {
+    pub fn init(filepath: []const u8, conf: *const config.Config) Allocator.Error!Client {
         return .{
             .filepath = try utils.allocator.dupe(u8, filepath),
             .match_time_remaining = conf.game_timeout_match,
             .turn_time = conf.game_timeout_turn,
-            .proc = std.process.Child.init(&.{filepath}, utils.allocator),
             .read_buf = std.ArrayList(u8).init(utils.allocator),
         };
     }
 
     pub fn start_process(self: *Self, ctx: *const server.Context) !void {
+        self.proc = std.process.Child.init(&.{self.filepath}, utils.allocator);
         self.proc.stdout_behavior = .Pipe;
         self.proc.stdin_behavior = .Pipe;
         self.proc.stderr_behavior = .Ignore;
@@ -74,7 +60,11 @@ pub const Client = struct {
         try self.proc.spawn();
 
         try self.send_about();
-        const about_resp = try self.get_command_with_timeout(5 * std.time.ms_per_s);
+        const about_resp = self.get_command_with_timeout(5 * std.time.ms_per_s) catch |e| {
+            if (e == error.TimeoutError)
+                logz.fatal().ctx("AI did not answer to ABOUT command in time!").log();
+            return e;
+        };
         if (about_resp == null) {
             logz.fatal().ctx("Did not get proper ABOUT answer from AI!").log();
             return error.BadInitialization;
@@ -89,7 +79,11 @@ pub const Client = struct {
         }
 
         try self.send_start(ctx);
-        const start_resp = try self.get_command_with_timeout(5 * std.time.ms_per_s);
+        const start_resp = self.get_command_with_timeout(5 * std.time.ms_per_s) catch |e| {
+            if (e == error.TimeoutError)
+                logz.fatal().ctx("AI did not answer to ABOUT command in time!").log();
+            return e;
+        };
         if (start_resp == null) {
             logz.fatal().ctx("Did not get proper START answer from AI!").log();
             return error.BadInitialization;
@@ -103,11 +97,11 @@ pub const Client = struct {
             },
         }
 
-        logz.info().ctx("Finished initialization").fmt("data", "{any}", .{self.infos}).log();
+        logz.info().ctx("Finished initialization").string("name", self.infos.?.name).log();
     }
 
     fn send_message(self: *Self, msg: []const u8) !void {
-        logz.debug().ctx("Sending message").string("data", msg).log();
+        logz.debug().ctx("Sending message").string("data", std.mem.trim(u8, msg, &std.ascii.whitespace)).log();
         // Not sure if this can block at all, but it will for for now
         try self.proc.stdin.?.writeAll(msg);
     }
@@ -152,14 +146,15 @@ pub const Client = struct {
         try self.send_message("OK\r\n");
     }
 
-    fn send_info_no_check(self: *Self, T: type, name: []const u8, val: T, allocator: std.mem.Allocator) !void {
+    fn send_info_no_check(self: *Self, T: type, name: []const u8, val: T) !void {
         switch (T) {
-            u64 => try self.send_format_message("INFO {s} {}\r\n", .{ name, val }, allocator),
+            u64 => try self.send_format_message("INFO {s} {}\r\n", .{ name, val }),
             else => @compileError("Missing serializer for send_info_no_check for type " ++ @typeName(T)),
         }
     }
 
-    fn send_info(self: *Self, info: ServerInfo, allocator: std.mem.Allocator) !void {
+    // TODO: Refactor this shit
+    fn send_info(self: *Self, info: ServerInfo) !void {
         switch (info) {
             .timeout_turn,
             .timeout_match,
@@ -169,7 +164,6 @@ pub const Client = struct {
                 @TypeOf(v),
                 @tagName(info),
                 v,
-                allocator,
             ),
         }
     }
@@ -198,22 +192,8 @@ pub const Client = struct {
         try self.send_format_message("START {}\r\n", .{ctx.conf.game_board_size});
     }
 
-    fn send_end_no_check(self: *Self, status: []const u8, msg: ?[]const u8) !void {
-        try self.send_format_message("END {s} \"{s}\"\r\n", .{ status, msg orelse "" });
-    }
-
-    fn send_end(self: *Self, status: EndStatus, msg: ?[]const u8) !void {
-        try self.send_end_no_check(@tagName(status), msg);
-    }
-
-    pub fn start(self: *Self, ctx: *const server.Context) !void {
-        try self.send_start(ctx);
-        self.state = ClientState.PWaitingForStartAnswer;
-    }
-
-    pub fn begin(self: *Self) !void {
-        try self.send_begin();
-        self.state = .PWaitingForTurn;
+    fn send_end(self: *Self) !void {
+        try self.send_message("END\r\n");
     }
 
     fn handle_log(self: *Self, l: *const command.ClientCommandLog) void {
@@ -226,8 +206,40 @@ pub const Client = struct {
         }
     }
 
+    // TODO: Make this less error prone + handle timeouts properly
+    fn get_pos(self: *Self, ctx: *const server.Context) !game.Position {
+        while (true) {
+            const cmd = try self.get_command_with_timeout(@intCast(ctx.conf.game_timeout_turn));
+            if (cmd == null)
+                continue;
+            defer cmd.?.deinit();
+            switch (cmd.?) {
+                .CommandLog => |l| {
+                    self.handle_log(&l);
+                    continue;
+                },
+                .ResponsePosition => |p| return p,
+                else => {
+                    // TODO: Handle bad commands
+                    @panic("AAAAAAAA");
+                },
+            }
+        }
+    }
+
+    pub fn begin(self: *Self, ctx: *const server.Context) !game.Position {
+        try self.send_begin();
+        return try self.get_pos(ctx);
+    }
+
+    pub fn turn(self: *Self, ctx: *const server.Context, pos: game.Position) !game.Position {
+        try self.send_info(.{ .timeout_turn = ctx.conf.game_timeout_turn });
+        try self.send_turn(pos);
+        return try self.get_pos(ctx);
+    }
+
     pub fn stop_child(self: *Self) !void {
-        // -> END
+        self.send_end() catch {}; // Evil af, but aight
 
         const seconds_to_wait_after_end = 1;
         std.time.sleep(seconds_to_wait_after_end * std.time.ns_per_s);
