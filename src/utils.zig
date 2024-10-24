@@ -44,10 +44,15 @@ pub const ReadWriteError = error{
 };
 
 // timeout in ms
+// TODO: Handle timeouts on windows
 pub fn read_with_timeout(f: std.fs.File, output: []u8, timeout: i32) !usize {
     if (builtin.os.tag != .windows) {
         var fds: [1]std.posix.pollfd = .{
-            .{ .fd = f.handle, .events = std.posix.POLL.IN, .revents = 0 },
+            .{
+                .fd = f.handle,
+                .events = std.posix.POLL.IN,
+                .revents = 0,
+            },
         };
         const poll_ret = try std.posix.poll(&fds, timeout);
         if (poll_ret == 0)
