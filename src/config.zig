@@ -10,6 +10,8 @@ pub const Config = struct {
     game_timeout_match: u64,
     game_timeout_turn: u64,
     game_max_memory: u64,
+    game_player1: []const u8,
+    game_player2: []const u8,
 
     other_motd: []const u8,
 
