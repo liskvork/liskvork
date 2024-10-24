@@ -39,6 +39,10 @@ const EndStatus = enum {
     ERROR,
 };
 
+const ClientError = error{
+    BadInitialization,
+};
+
 pub const Client = struct {
     const Self = @This();
 
@@ -56,7 +60,7 @@ pub const Client = struct {
             .filepath = try utils.allocator.dupe(u8, filepath),
             .match_time_remaining = conf.game_timeout_match,
             .turn_time = conf.game_timeout_turn,
-            .proc = std.process.Child.init(.{filepath}, utils.allocator),
+            .proc = std.process.Child.init(&.{filepath}, utils.allocator),
             .read_buf = std.ArrayList(u8).init(utils.allocator),
         };
     }
@@ -64,18 +68,42 @@ pub const Client = struct {
     pub fn start_process(self: *Self, ctx: *const server.Context) !void {
         self.proc.stdout_behavior = .Pipe;
         self.proc.stdin_behavior = .Pipe;
-        self.proc.stdout_behavior = .Ignore;
+        self.proc.stderr_behavior = .Ignore;
 
         logz.debug().ctx("Spawning process").string("filepath", self.filepath).log();
         try self.proc.spawn();
-        // TODO: Get basic info from the process
 
         try self.send_about();
-        // <- name...
-        try self.send_start(ctx);
-        // <- OK
+        const about_resp = try self.get_command_with_timeout(5 * std.time.ms_per_s);
+        if (about_resp == null) {
+            logz.fatal().ctx("Did not get proper ABOUT answer from AI!").log();
+            return error.BadInitialization;
+        }
+        defer about_resp.?.deinit();
+        switch (about_resp.?) {
+            .ResponseAbout => |e| self.infos = try e.dupe(utils.allocator),
+            else => {
+                logz.fatal().ctx("Did not get proper ABOUT answer from AI!").log();
+                return error.BadInitialization;
+            },
+        }
 
-        // ALL GOOD
+        try self.send_start(ctx);
+        const start_resp = try self.get_command_with_timeout(5 * std.time.ms_per_s);
+        if (start_resp == null) {
+            logz.fatal().ctx("Did not get proper START answer from AI!").log();
+            return error.BadInitialization;
+        }
+        defer start_resp.?.deinit();
+        switch (start_resp.?) {
+            .ResponseOK => {},
+            else => {
+                logz.fatal().ctx("Did not get proper START answer from AI!").log();
+                return error.BadInitialization;
+            },
+        }
+
+        logz.info().ctx("Finished initialization").fmt("data", "{any}", .{self.infos}).log();
     }
 
     fn send_message(self: *Self, msg: []const u8) !void {
@@ -85,16 +113,18 @@ pub const Client = struct {
     }
 
     fn get_command_with_timeout(self: *Self, timeout: i32) !?command.ClientCommand {
-        return try command.parse(try self.get_line_with_timeout(timeout), utils.allocator);
+        const line = try self.get_line_with_timeout(timeout);
+        defer utils.allocator.free(line);
+        return try command.parse(line, utils.allocator);
     }
 
     // That needs hella testing lmao
-    fn get_line_with_timeout(self: *Self, timeout: i32) !void {
+    fn get_line_with_timeout(self: *Self, timeout: i32) ![]const u8 {
         var left_timeout: i32 = timeout * std.time.us_per_ms;
         const start_time = std.time.microTimestamp();
-        const tmp_rd_buf: [256]u8 = undefined;
+        var tmp_rd_buf: [256]u8 = undefined;
         while (true) {
-            const nb_read = try utils.read_with_timeout(self.proc.stdout, &tmp_rd_buf, left_timeout / std.time.us_per_ms);
+            const nb_read = try utils.read_with_timeout(self.proc.stdout.?, &tmp_rd_buf, @divTrunc(left_timeout, std.time.us_per_ms));
             try self.read_buf.appendSlice(tmp_rd_buf[0..nb_read]);
             if (std.mem.indexOf(u8, self.read_buf.items, "\n")) |i| {
                 const line = try utils.allocator.dupe(u8, self.read_buf.items[0 .. i + 1]);
@@ -104,7 +134,7 @@ pub const Client = struct {
                 return line;
             }
             const current_time = std.time.microTimestamp();
-            left_timeout = @max(0, timeout - (start_time - current_time));
+            left_timeout = @intCast(@max(0, timeout - (start_time - current_time)));
         }
     }
 
@@ -196,7 +226,7 @@ pub const Client = struct {
         }
     }
 
-    pub fn stop_child(self: *const Self) !void {
+    pub fn stop_child(self: *Self) !void {
         // -> END
 
         const seconds_to_wait_after_end = 1;

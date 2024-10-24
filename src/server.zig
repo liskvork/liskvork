@@ -61,9 +61,14 @@ pub fn launch_server(conf: *const config.Config) !void {
     var ctx = try Context.init(conf);
     defer ctx.deinit();
 
-    while (ctx.running) {
-        break;
-    }
+    var test_client = try Client.init("ais/test_ai.py", conf);
+    defer test_client.deinit();
+    try test_client.start_process(&ctx);
+    try test_client.stop_child();
+
+    // while (ctx.running) {
+    //     break;
+    // }
 }
 
 test {
