@@ -44,10 +44,12 @@ pub const ReadWriteError = error{
 };
 
 // timeout in ms
-pub fn read_with_timeout(f: std.fs.File, output: []const u8, timeout: i32) !usize {
+pub fn read_with_timeout(f: std.fs.File, output: []u8, timeout: i32) !usize {
     // linux only?
-    const fds: []std.posix.pollfd = .{ .fd = f.handle, .events = std.posix.POLL.IN };
-    const poll_ret = try std.posix.poll(fds, timeout);
+    var fds: [1]std.posix.pollfd = .{
+        .{ .fd = f.handle, .events = std.posix.POLL.IN, .revents = 0 },
+    };
+    const poll_ret = try std.posix.poll(&fds, timeout);
     if (poll_ret == 0)
         return ReadWriteError.TimeoutError;
     if (poll_ret == -1)
