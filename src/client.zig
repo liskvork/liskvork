@@ -97,7 +97,12 @@ pub const Client = struct {
             },
         }
 
-        logz.info().ctx("Finished initialization").string("name", self.infos.?.name).log();
+        var l = logz.info().ctx("Finished initialization").string("name", self.infos.?.name);
+        defer l.log();
+        if (self.infos.?.author) |i| l = l.string("author", i);
+        if (self.infos.?.version) |i| l = l.string("version", i);
+        if (self.infos.?.country) |i| l = l.string("country", i);
+        if (self.infos.?.www) |i| l = l.string("www", i);
     }
 
     fn send_message(self: *Self, msg: []const u8) !void {
