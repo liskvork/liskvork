@@ -26,7 +26,7 @@ the ticket board.
 ### Docker
 
 ```sh
-docker build . --build-arg BUILD_VERSION=0.0.0 -t liskvork:0.0.0
+docker build . --build-arg BUILD_VERSION=0.0.0-dev -t liskvork
 ```
 
 ### No docker
@@ -43,8 +43,7 @@ zig build -Doptimize=ReleaseSafe
 
 ## Installing
 
-Get the binary from https://releases.liskvork.org and then just launch it with
-the default config.
+Get the binary from https://releases.liskvork.org and then just launch it.
 
 ## Launching liskvork
 
@@ -59,7 +58,7 @@ the default config.
 
 ```sh
 # Once compiled with docker
-VERSION=1.0.0 docker run liskvork:${VERSION}
+docker run liskvork
 ```
 
 ## Configuration
