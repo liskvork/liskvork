@@ -127,7 +127,7 @@ pub const Client = struct {
         const start_time = std.time.microTimestamp();
         var tmp_rd_buf: [256]u8 = undefined;
         while (true) {
-            const nb_read = try utils.read_with_timeout(self.proc.stdout.?, &tmp_rd_buf, @divTrunc(left_timeout, std.time.us_per_ms));
+            const nb_read = try utils.read_with_timeout(self.proc.stdout.?, &tmp_rd_buf, if (timeout != -1) @divTrunc(left_timeout, std.time.us_per_ms) else -1);
             try self.read_buf.appendSlice(tmp_rd_buf[0..nb_read]);
             if (std.mem.indexOf(u8, self.read_buf.items, "\n")) |i| {
                 const line = try utils.allocator.dupe(u8, self.read_buf.items[0 .. i + 1]);
@@ -165,14 +165,14 @@ pub const Client = struct {
     // TODO: Refactor this shit
     fn send_info(self: *Self, info: ServerInfo) !void {
         switch (info) {
-            .timeout_turn,
-            .timeout_match,
             .max_memory,
             .time_left,
+            .timeout_turn,
+            .timeout_match,
             => |v| try self.send_info_no_check(
                 @TypeOf(v),
                 @tagName(info),
-                v,
+                if (v == 0) 99999999 else v,
             ),
         }
     }
@@ -216,8 +216,12 @@ pub const Client = struct {
     }
 
     fn get_pos(self: *Self, ctx: *const server.Context) !game.Position {
+        const start_time = std.time.microTimestamp();
         while (true) {
-            const cmd = try self.get_command_with_timeout(@intCast(ctx.conf.game_timeout_turn));
+            const current_time = std.time.microTimestamp();
+            const remaining_time: i32 = @max(0, @as(i32, @intCast(ctx.conf.game_timeout_turn)) - @as(i32, @intCast(@divTrunc(current_time - start_time, 1000))));
+
+            const cmd = try self.get_command_with_timeout(if (ctx.conf.game_timeout_turn != 0) remaining_time else -1);
             if (cmd == null)
                 return error.BadCommand;
             defer cmd.?.deinit();

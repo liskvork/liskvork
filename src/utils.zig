@@ -41,6 +41,7 @@ pub fn skip_n_whitespace(slice: []const u8, n: usize) ![]const u8 {
 
 pub const ReadWriteError = error{
     TimeoutError,
+    ConnectionError,
 };
 
 // timeout in ms
@@ -50,7 +51,7 @@ pub fn read_with_timeout(f: std.fs.File, output: []u8, timeout: i32) !usize {
         var fds: [1]std.posix.pollfd = .{
             .{
                 .fd = f.handle,
-                .events = std.posix.POLL.IN,
+                .events = std.posix.POLL.IN | std.posix.POLL.HUP,
                 .revents = 0,
             },
         };
@@ -58,6 +59,8 @@ pub fn read_with_timeout(f: std.fs.File, output: []u8, timeout: i32) !usize {
         if (poll_ret == 0)
             return ReadWriteError.TimeoutError;
         std.debug.assert(poll_ret == 1);
+        if (fds[0].revents & std.posix.POLL.HUP != 0)
+            return ReadWriteError.ConnectionError;
     }
     return std.posix.read(f.handle, output);
 }
