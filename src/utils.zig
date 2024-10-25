@@ -57,8 +57,6 @@ pub fn read_with_timeout(f: std.fs.File, output: []u8, timeout: i32) !usize {
         const poll_ret = try std.posix.poll(&fds, timeout);
         if (poll_ret == 0)
             return ReadWriteError.TimeoutError;
-        if (poll_ret == -1)
-            unreachable; // Not so sure about that :|
         std.debug.assert(poll_ret == 1);
     }
     return std.posix.read(f.handle, output);
