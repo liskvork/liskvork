@@ -28,6 +28,7 @@ const EndStatus = enum {
 
 const ClientError = error{
     BadInitialization,
+    BadCommand,
 };
 
 pub const Client = struct {
@@ -114,7 +115,10 @@ pub const Client = struct {
     fn get_command_with_timeout(self: *Self, timeout: i32) !?command.ClientCommand {
         const line = try self.get_line_with_timeout(timeout);
         defer utils.allocator.free(line);
-        return try command.parse(line, utils.allocator);
+        const cmd = try command.parse(line, utils.allocator);
+        if (cmd == null)
+            logz.err().ctx("Could not parse command").string("data", line).log();
+        return cmd;
     }
 
     // That needs hella testing lmao
@@ -211,12 +215,11 @@ pub const Client = struct {
         }
     }
 
-    // TODO: Make this less error prone + handle timeouts properly
     fn get_pos(self: *Self, ctx: *const server.Context) !game.Position {
         while (true) {
             const cmd = try self.get_command_with_timeout(@intCast(ctx.conf.game_timeout_turn));
             if (cmd == null)
-                continue;
+                return error.BadCommand;
             defer cmd.?.deinit();
             switch (cmd.?) {
                 .CommandLog => |l| {
@@ -224,9 +227,9 @@ pub const Client = struct {
                     continue;
                 },
                 .ResponsePosition => |p| return p,
-                else => {
-                    // TODO: Handle bad commands
-                    @panic("AAAAAAAA");
+                else => |c| {
+                    logz.err().ctx("Did not get a position or a log from brain").string("actual", @typeName(@TypeOf(c))).log();
+                    return error.BadCommand;
                 },
             }
         }
