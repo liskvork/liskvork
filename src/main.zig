@@ -15,8 +15,10 @@ pub fn main() !void {
 
     defer {
         // Don't panic in release builds, that should only be needed in debug
-        if (utils.gpa.deinit() != .ok and utils.is_debug_build)
-            @panic("memory leaked");
+        if (!build_config.use_system_allocator) {
+            if (utils.gpa.deinit() != .ok and utils.is_debug_build)
+                @panic("memory leaked");
+        }
     }
 
     try logz.setup(utils.allocator, .{

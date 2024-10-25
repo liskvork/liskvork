@@ -35,6 +35,7 @@ const build_options = struct {
     version: []const u8,
     build_all: bool,
     bin_name: []const u8,
+    use_system_allocator: bool,
 };
 
 fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, opt: build_options) void {
@@ -45,11 +46,15 @@ fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.B
     const options = b.addOptions();
     options.addOption([]const u8, "version", opt.version);
     options.addOption([]const u8, "bin_name", opt.bin_name);
+    options.addOption(bool, "use_system_allocator", opt.use_system_allocator);
 
     bin.root_module.addOptions("build_config", options);
     bin.root_module.addImport("ini", ini_pkg.module("ini"));
     bin.root_module.addImport("logz", logz_pkg.module("logz"));
     bin.root_module.addImport("zul", zul_pkg.module("zul"));
+
+    if (opt.use_system_allocator)
+        bin.linkLibC();
 }
 
 fn configure_tests(b: *std.Build, opt: build_options, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) *std.Build.Step.Compile {
@@ -108,6 +113,11 @@ fn set_build_options(b: *std.Build) build_options {
             "bin_name",
             "base bin name",
         ) orelse "liskvork",
+        .use_system_allocator = b.option(
+            bool,
+            "use_system_allocator",
+            "use the system allocator (libc)",
+        ) orelse false,
     };
 }
 
