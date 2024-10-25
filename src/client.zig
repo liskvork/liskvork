@@ -245,7 +245,6 @@ pub const Client = struct {
     }
 
     pub fn turn(self: *Self, ctx: *const server.Context, pos: game.Position) !game.Position {
-        try self.send_info(.{ .timeout_turn = ctx.conf.game_timeout_turn });
         try self.send_turn(pos);
         return try self.get_pos(ctx);
     }
