@@ -26,7 +26,7 @@ the ticket board.
 ### Docker
 
 ```sh
-VERSION=1.0.0 docker build . --build-arg BUILD_VERSION=${VERSION} -t liskvork:${VERSION}
+docker build . --build-arg BUILD_VERSION=0.0.0 -t liskvork:0.0.0
 ```
 
 ### No docker
