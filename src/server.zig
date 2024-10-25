@@ -51,6 +51,29 @@ fn dump_after_move(board_file: std.fs.File, ctx: *const Context, pos: game.Posit
     try board_file.writeAll("\n\n");
 }
 
+fn call_winning_player(num_player: u2) void {
+    if (num_player == 1) {
+        logz.info().ctx("Player1 wins!").log();
+    } else logz.info().ctx("Player2 wins!").log();
+}
+
+fn handle_player_error(e: anyerror, num_player: u2) !void {
+    const winning_player: u2 = if (num_player == 1) 2 else 1;
+    switch (e) {
+        utils.ReadWriteError.TimeoutError => {
+            logz.err().ctx("Player could not answer in the given time").int("player", num_player).log();
+        },
+        game.Error.OutOfBound => {
+            logz.err().ctx("Player gave a move that's out of bounds").int("player", num_player).log();
+        },
+        game.Error.AlreadyTaken => {
+            logz.err().ctx("Player gave a position that's already in use").int("player", num_player).log();
+        },
+        else => return e,
+    }
+    call_winning_player(winning_player);
+}
+
 pub fn launch_server(conf: *const config.Config) !void {
     var ctx = try Context.init(conf);
     defer ctx.deinit();
@@ -73,15 +96,15 @@ pub fn launch_server(conf: *const config.Config) !void {
     var num_move: u16 = 1;
 
     var start_time = std.time.microTimestamp();
-    var pos1 = try player1.begin(&ctx);
+    var pos1 = player1.begin(&ctx) catch |e| return handle_player_error(e, 1);
     var end_time = std.time.microTimestamp();
-    _ = try ctx.board.place(pos1, .Player1); // Is never a winning move
+    _ = ctx.board.place(pos1, .Player1) catch |e| return handle_player_error(e, 1); // Is never a winning move
     try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
     while (true) {
         start_time = std.time.microTimestamp();
-        const pos2 = try player2.turn(&ctx, pos1);
+        const pos2 = player2.turn(&ctx, pos1) catch |e| return handle_player_error(e, 1);
         end_time = std.time.microTimestamp();
-        const pos2_win = try ctx.board.place(pos2, .Player2);
+        const pos2_win = ctx.board.place(pos2, .Player2) catch |e| return handle_player_error(e, 1);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos2, num_move, 2, end_time - start_time);
         if (pos2_win) {
@@ -90,9 +113,9 @@ pub fn launch_server(conf: *const config.Config) !void {
         }
 
         start_time = std.time.microTimestamp();
-        pos1 = try player1.turn(&ctx, pos2);
+        pos1 = player1.turn(&ctx, pos2) catch |e| return handle_player_error(e, 1);
         end_time = std.time.microTimestamp();
-        const pos1_win = try ctx.board.place(pos1, .Player1);
+        const pos1_win = ctx.board.place(pos1, .Player1) catch |e| return handle_player_error(e, 1);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
         if (pos1_win) {
