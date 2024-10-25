@@ -111,6 +111,10 @@ pub fn launch_server(conf: *const config.Config) !void {
             logz.info().ctx("Player 2 wins!").log();
             break;
         }
+        if (num_move >= 200) {
+            logz.info().ctx("I don't know how you did it, but it's a tie! The board is full.").log();
+            return;
+        }
 
         start_time = std.time.microTimestamp();
         pos1 = player1.turn(&ctx, pos2) catch |e| return handle_player_error(e, 1);
