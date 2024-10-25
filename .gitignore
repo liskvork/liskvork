@@ -8,5 +8,9 @@ result
 .envrc
 .pre-commit-config.yaml
 
-# Config created by liskvork at runtime
+# Created by liskvork at runtime
 config.ini
+board.log
+
+# AIS used for testing
+ais
