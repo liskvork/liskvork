@@ -7,12 +7,12 @@ pub const semver = std.SemanticVersion.parse(build_config.version) catch @compil
 
 pub const is_debug_build = builtin.mode == std.builtin.OptimizeMode.Debug;
 
-pub var gpa = std.heap.GeneralPurposeAllocator(.{
+pub var gpa = if (build_config.use_system_allocator) {} else std.heap.GeneralPurposeAllocator(.{
     .safety = is_debug_build,
     .verbose_log = false, // abandon hope all ye who enter here
 }){};
 
-pub const allocator = gpa.allocator();
+pub const allocator = if (build_config.use_system_allocator) std.heap.c_allocator else gpa.allocator();
 
 pub const SliceError = error{
     SliceTooSmall,
