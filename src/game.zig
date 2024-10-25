@@ -4,9 +4,19 @@ const Allocator = std.mem.Allocator;
 const utils = @import("utils.zig");
 
 const CellState = enum {
+    const Self = @This();
+
     Empty,
     Player1,
     Player2,
+
+    pub fn to_slice(self: Self) []const u8 {
+        return switch (self) {
+            .Empty => "-",
+            .Player1 => "O",
+            .Player2 => "X",
+        };
+    }
 };
 
 pub const MoveType = enum {
@@ -119,6 +129,15 @@ pub const Game = struct {
             return Error.AlreadyTaken;
         self.board[idx] = move_type.to_cell();
         return self.is_move_winning(pos);
+    }
+
+    pub fn dump(self: *const Self, output_file: std.fs.File) !void {
+        for (0..self.size) |x| {
+            for (0..self.size) |y| {
+                try output_file.writeAll(self.at(.{ x, y }).to_slice());
+            }
+            try output_file.writeAll("\n");
+        }
     }
 
     pub fn deinit(self: *const Self) void {

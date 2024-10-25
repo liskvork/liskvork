@@ -16,6 +16,7 @@ pub const Config = struct {
     other_motd: []const u8,
 
     log_level: logz.Level,
+    log_board_file: []const u8,
 };
 
 pub const default_config = @embedFile("default_config.ini");
