@@ -32,15 +32,16 @@ pub const Context = struct {
     }
 };
 
-fn dump_after_move(board_file: std.fs.File, ctx: *const Context, pos: game.Position, num_move: u16, num_player: u2) !void {
+fn dump_after_move(board_file: std.fs.File, ctx: *const Context, pos: game.Position, num_move: u16, num_player: u2, time_taken: i64) !void {
     const start = try std.fmt.allocPrint(
         utils.allocator,
-        "Move {}:\nPlayer{}: {},{}\n",
+        "Move {}:\nPlayer{}: {},{}\nTime: {d:.3}ms\n",
         .{
             num_move,
             num_player,
             pos[0],
             pos[1],
+            @as(f32, @floatFromInt(time_taken)) / @as(f32, @floatFromInt(std.time.us_per_ms)),
         },
     );
     defer utils.allocator.free(start);
@@ -65,34 +66,40 @@ pub fn launch_server(conf: *const config.Config) !void {
     var player2 = try Client.init(conf.game_player2, conf);
     defer player2.deinit();
     try player1.start_process(&ctx);
+    defer player1.stop_child() catch @panic("How?");
     try player2.start_process(&ctx);
+    defer player2.stop_child() catch @panic("How?");
 
     var num_move: u16 = 1;
+
+    var start_time = std.time.microTimestamp();
     var pos1 = try player1.begin(&ctx);
+    var end_time = std.time.microTimestamp();
     _ = try ctx.board.place(pos1, .Player1); // Is never a winning move
-    try dump_after_move(board_log_file, &ctx, pos1, num_move, 1);
+    try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
     while (true) {
+        start_time = std.time.microTimestamp();
         const pos2 = try player2.turn(&ctx, pos1);
+        end_time = std.time.microTimestamp();
         const pos2_win = try ctx.board.place(pos2, .Player2);
         num_move += 1;
-        try dump_after_move(board_log_file, &ctx, pos2, num_move, 2);
+        try dump_after_move(board_log_file, &ctx, pos2, num_move, 2, end_time - start_time);
         if (pos2_win) {
             logz.info().ctx("Player 2 wins!").log();
             break;
         }
 
+        start_time = std.time.microTimestamp();
         pos1 = try player1.turn(&ctx, pos2);
+        end_time = std.time.microTimestamp();
         const pos1_win = try ctx.board.place(pos1, .Player1);
         num_move += 1;
-        try dump_after_move(board_log_file, &ctx, pos1, num_move, 1);
+        try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
         if (pos1_win) {
             logz.info().ctx("Player 1 wins!").log();
             break;
         }
     }
-
-    try player1.stop_child();
-    try player2.stop_child();
 }
 
 test {
