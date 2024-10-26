@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 const logz = @import("logz");
 
@@ -52,6 +53,22 @@ pub const Client = struct {
     }
 
     pub fn start_process(self: *Self, ctx: *const server.Context) !void {
+        const s = std.fs.cwd().statFile(self.filepath) catch |e| {
+            switch (e) {
+                std.fs.File.OpenError.FileNotFound => {
+                    logz.fatal().ctx("Could not find brain executable").string("filepath", self.filepath).log();
+                },
+                else => {
+                    logz.fatal().ctx("Unknown error while trying to get info on brain executable").string("filepath", self.filepath).string("error name", @errorName(e)).log();
+                },
+            }
+            return error.BadInitialization;
+        };
+        if (builtin.os.tag != .windows and s.mode & 0o111 == 0) {
+            logz.fatal().ctx("The brain executable is not executable!").string("filepath", self.filepath).log();
+            return error.BadInitialization;
+        }
+
         self.proc = std.process.Child.init(&.{self.filepath}, utils.allocator);
         self.proc.stdout_behavior = .Pipe;
         self.proc.stdin_behavior = .Pipe;
