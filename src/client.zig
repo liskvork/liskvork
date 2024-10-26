@@ -115,6 +115,8 @@ pub const Client = struct {
             },
         }
 
+        try self.send_all_infos(ctx);
+
         var l = logz.info().ctx("Finished initialization").string("name", self.infos.?.name);
         defer l.log();
         if (self.infos.?.author) |i| l = l.string("author", i);
