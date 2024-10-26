@@ -13,11 +13,15 @@ pub const Config = struct {
     game_player1: []const u8,
     game_player2: []const u8,
 
-    other_motd: []const u8,
-
     log_level: logz.Level,
     log_board_file: []const u8,
     log_board_color: bool,
+
+    web_address: []const u8,
+    web_port: u16,
+
+    other_auto_start: bool,
+    other_auto_close: bool,
 };
 
 pub const default_config = @embedFile("default_config.ini");

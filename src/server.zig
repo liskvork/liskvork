@@ -11,6 +11,7 @@ const config = @import("config.zig");
 const client = @import("client.zig");
 const Client = client.Client;
 const game = @import("game.zig");
+const Web = @import("web.zig");
 
 pub const Context = struct {
     const Self = @This();
@@ -19,16 +20,19 @@ pub const Context = struct {
     running: bool = true,
     game_launched: bool = false,
     board: game.Game,
+    web_srv: Web.Server,
 
     pub fn init(conf: *const config.Config) !Context {
         return .{
             .conf = conf,
             .board = try game.Game.init(conf.game_board_size),
+            .web_srv = try Web.Server.init(conf),
         };
     }
 
     pub fn deinit(self: *Self) void {
         self.board.deinit();
+        self.web_srv.deinit();
     }
 };
 
@@ -78,6 +82,10 @@ pub fn launch_server(conf: *const config.Config) !void {
     var ctx = try Context.init(conf);
     defer ctx.deinit();
 
+    const stdin = std.io.getStdIn().reader();
+
+    try ctx.web_srv.launch_in_background();
+
     const board_log_file = try std.fs.cwd().createFile(
         conf.log_board_file,
         .{},
@@ -95,16 +103,25 @@ pub fn launch_server(conf: *const config.Config) !void {
 
     var num_move: u16 = 1;
 
+    if (!ctx.conf.other_auto_start) {
+        logz.warn().ctx("auto_start is turned off! Press enter to start...").log();
+        var buf: [10]u8 = undefined; // 10 is a magic number, doesn't matter
+        _ = try stdin.readUntilDelimiterOrEof(&buf, '\n');
+        logz.info().ctx("Starting...").log();
+    }
+
     var start_time = std.time.microTimestamp();
     var pos1 = player1.begin(&ctx) catch |e| return handle_player_error(e, 1);
     var end_time = std.time.microTimestamp();
     _ = ctx.board.place(pos1, .Player1) catch |e| return handle_player_error(e, 1); // Is never a winning move
+    try ctx.web_srv.push_move(pos1, .Player1);
     try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
-    while (true) {
+    try while (true) {
         start_time = std.time.microTimestamp();
-        const pos2 = player2.turn(&ctx, pos1) catch |e| return handle_player_error(e, 1);
+        const pos2 = player2.turn(&ctx, pos1) catch |e| break handle_player_error(e, 1);
         end_time = std.time.microTimestamp();
-        const pos2_win = ctx.board.place(pos2, .Player2) catch |e| return handle_player_error(e, 1);
+        const pos2_win = ctx.board.place(pos2, .Player2) catch |e| break handle_player_error(e, 1);
+        try ctx.web_srv.push_move(pos2, .Player2);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos2, num_move, 2, end_time - start_time);
         if (pos2_win) {
@@ -113,19 +130,27 @@ pub fn launch_server(conf: *const config.Config) !void {
         }
         if (num_move >= 200) {
             logz.info().ctx("I don't know how you did it, but it's a tie! The board is full.").log();
-            return;
+            break;
         }
 
         start_time = std.time.microTimestamp();
-        pos1 = player1.turn(&ctx, pos2) catch |e| return handle_player_error(e, 1);
+        pos1 = player1.turn(&ctx, pos2) catch |e| break handle_player_error(e, 1);
         end_time = std.time.microTimestamp();
-        const pos1_win = ctx.board.place(pos1, .Player1) catch |e| return handle_player_error(e, 1);
+        const pos1_win = ctx.board.place(pos1, .Player1) catch |e| break handle_player_error(e, 1);
+        try ctx.web_srv.push_move(pos1, .Player1);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
         if (pos1_win) {
             logz.info().ctx("Player 1 wins!").log();
             break;
         }
+    };
+
+    if (!ctx.conf.other_auto_close) {
+        logz.warn().ctx("auto_close is turned off! Press enter to close...").log();
+        var buf: [10]u8 = undefined; // 10 is a magic number, doesn't matter
+        _ = try stdin.readUntilDelimiterOrEof(&buf, '\n');
+        logz.info().ctx("Closing...").log();
     }
 }
 
