@@ -17,6 +17,7 @@ pub const Config = struct {
 
     log_level: logz.Level,
     log_board_file: []const u8,
+    log_board_color: bool,
 };
 
 pub const default_config = @embedFile("default_config.ini");
@@ -112,6 +113,13 @@ fn map_value(kv: ini_field, conf: *tmp_config, allocator: std.mem.Allocator) !vo
             @field(conf, f.name) = switch (target_type) {
                 u16, u32, u64, i16, i32, i64 => try std.fmt.parseInt(target_type, kv.value, 0),
                 []const u8 => try allocator.dupe(u8, kv.value),
+                bool => blk: {
+                    if (std.mem.eql(u8, kv.value, "true")) {
+                        break :blk true;
+                    } else if (std.mem.eql(u8, kv.value, "false")) {
+                        break :blk false;
+                    } else @panic("augh");
+                },
                 else => @compileError("You probably need to implement parsing for " ++ @typeName(target_type) ++ " :3"),
             };
             return;
