@@ -12,10 +12,24 @@ linkFarm "zig-packages" [
     };
   }
   {
+    name = "12204ee130dbefc6f0de0c2b9e48f946ae8114f5f111256724122e17575a1ee7e2fb";
+    path = fetchzip {
+      url = "https://github.com/karlseguin/websocket.zig/archive/cf89cb8b9c61c99982ced19da54890983e226245.tar.gz";
+      hash = "sha256-aLIMgRGV9sLs+M0+b8E9BRn5ftiqj3nbL9K/Fti+BeE=";
+    };
+  }
+  {
     name = "12206f5d1e5bd4793fe952bbae891b7424a19026e0d296a1381074c7d21d5d76c1a1";
     path = fetchzip {
       url = "https://github.com/karlseguin/zul/archive/08c989bf6871e87807a4668232913ee245425863.tar.gz";
       hash = "sha256-jq0fQo22IfvhkpufIjN7mnhwe4/W9/3tHhtsh6AONBI=";
+    };
+  }
+  {
+    name = "12208c1f2c5f730c4c03aabeb0632ade7e21914af03e6510311b449458198d0835d6";
+    path = fetchzip {
+      url = "https://github.com/karlseguin/http.zig/archive/7d2ddae87af9b110783085c0ea6b03985faa4584.tar.gz";
+      hash = "sha256-CGZXRtrS8G+FDaBCpDOqqHLGcfYT7m/BowTk0P3uEQo=";
     };
   }
   {
