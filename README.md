@@ -13,9 +13,9 @@ Main repository URL: <https://git.sr.ht/~emneo/liskvork>
 
 You can see open tickets over at [here](https://todo.sr.ht/~emneo/liskvork).
 
-You can submit bug reports and patches over at the [mailing lists]
-(https://sr.ht/~emneo/liskvork/lists) (yes that means sending a mail, it is not
-hard.)
+You can submit bug reports and patches over at the
+[mailing lists](https://sr.ht/~emneo/liskvork/lists)
+(yes that means sending a mail, it is not hard.)
 
 The ticket board is only opened to maintainers, so if you need to report a bug
 do it on the mailing lists, if the bug report is accepted it will be listed in
