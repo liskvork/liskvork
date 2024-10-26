@@ -3,6 +3,18 @@ const Allocator = std.mem.Allocator;
 
 const utils = @import("utils.zig");
 
+// COLORS
+const color_red: []const u8 = "\x1b[31m";
+const color_blue: []const u8 = "\x1b[34m";
+const color_green: []const u8 = "\x1b[32m";
+const color_reset: []const u8 = "\x1b[m";
+
+const player1_highlight = color_green ++ "O" ++ color_reset;
+const player1_color = color_blue ++ "O" ++ color_reset;
+const player2_highlight = color_green ++ "X" ++ color_reset;
+const player2_color = color_red ++ "X" ++ color_reset;
+// \COLORS
+
 const CellState = enum {
     const Self = @This();
 
@@ -10,11 +22,11 @@ const CellState = enum {
     Player1,
     Player2,
 
-    pub fn to_slice(self: Self) []const u8 {
+    pub fn to_slice(self: Self, colors: bool, highlight: bool) []const u8 {
         return switch (self) {
             .Empty => "-",
-            .Player1 => "O",
-            .Player2 => "X",
+            .Player1 => if (!colors) "O" else if (highlight) player1_highlight else player1_color,
+            .Player2 => if (!colors) "X" else if (highlight) player2_highlight else player2_color,
         };
     }
 };
@@ -131,10 +143,13 @@ pub const Game = struct {
         return self.is_move_winning(pos);
     }
 
-    pub fn dump(self: *const Self, output_file: std.fs.File) !void {
+    pub fn dump(self: *const Self, output_file: std.fs.File, colors: bool, pos_to_highlight: Position) !void {
         for (0..self.size) |x| {
             for (0..self.size) |y| {
-                try output_file.writeAll(self.at(.{ x, y }).to_slice());
+                try output_file.writeAll(self.at(.{ x, y }).to_slice(
+                    colors,
+                    pos_to_highlight[0] == x and pos_to_highlight[1] == y,
+                ));
             }
             try output_file.writeAll("\n");
         }

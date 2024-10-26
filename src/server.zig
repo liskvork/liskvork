@@ -47,7 +47,7 @@ fn dump_after_move(board_file: std.fs.File, ctx: *const Context, pos: game.Posit
     defer utils.allocator.free(start);
 
     try board_file.writeAll(start);
-    try ctx.board.dump(board_file);
+    try ctx.board.dump(board_file, ctx.conf.log_board_color, pos);
     try board_file.writeAll("\n\n");
 }
 
