@@ -85,7 +85,7 @@ const ini_field = struct {
     }
 };
 
-fn map_opt_struct_to_struct(opt_stc: type, stc: type, from: *const opt_stc) stc {
+fn map_opt_struct_to_struct(opt_stc: type, stc: type, from: *const opt_stc) !stc {
     var to: stc = undefined;
     inline for (std.meta.fields(opt_stc)) |f| {
         if (@typeInfo(f.type) != .Optional)
@@ -94,8 +94,10 @@ fn map_opt_struct_to_struct(opt_stc: type, stc: type, from: *const opt_stc) stc 
         const current_target_type = @TypeOf(@field(to, f.name));
         if (target_type != current_target_type)
             @compileError("Field " ++ f.name ++ " has mismatched types " ++ @typeName(target_type) ++ " != " ++ @typeName(current_target_type));
-        if (@field(from, f.name) == null)
-            @panic(f.name ++ " is missing from config");
+        if (@field(from, f.name) == null) {
+            logz.fatal().ctx("Missing key-value pair from config!").stringSafe("key", f.name).log();
+            return error.MissingKey;
+        }
         @field(to, f.name) = @field(from, f.name).?;
     }
     return to;
@@ -116,20 +118,27 @@ fn map_value(kv: ini_field, conf: *tmp_config, allocator: std.mem.Allocator) !vo
             }
             // Handle other types
             @field(conf, f.name) = switch (target_type) {
-                u16, u32, u64, i16, i32, i64 => try std.fmt.parseInt(target_type, kv.value, 0),
-                []const u8 => try allocator.dupe(u8, kv.value),
+                u16, u32, u64, i16, i32, i64 => std.fmt.parseInt(target_type, kv.value, 0),
+                []const u8 => if (kv.value.len == 0)
+                    error.BadKey
+                else
+                    allocator.dupe(u8, kv.value),
                 bool => blk: {
                     if (std.mem.eql(u8, kv.value, "true")) {
                         break :blk true;
                     } else if (std.mem.eql(u8, kv.value, "false")) {
                         break :blk false;
-                    } else @panic("augh");
+                    } else break :blk error.BadKey;
                 },
                 else => @compileError("You probably need to implement parsing for " ++ @typeName(target_type) ++ " :3"),
+            } catch |e| {
+                logz.fatal().ctx("Could not parse value from config!").stringSafe("key", f.name).string("value", kv.value).string("expected_type", @typeName(target_type)).log();
+                return e;
             };
             return;
         }
     }
+    logz.fatal().ctx("Unknown key in config!").string("key", kv.full_name).log();
     return ConfigError.UnknownKey;
 }
 
