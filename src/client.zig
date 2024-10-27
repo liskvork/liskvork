@@ -146,8 +146,6 @@ pub const Client = struct {
         const start_time = std.time.microTimestamp();
         var tmp_rd_buf: [256]u8 = undefined;
         while (true) {
-            const nb_read = try utils.read_with_timeout(self.proc.stdout.?, &tmp_rd_buf, if (timeout != -1) @divTrunc(left_timeout, std.time.us_per_ms) else -1);
-            try self.read_buf.appendSlice(tmp_rd_buf[0..nb_read]);
             if (std.mem.indexOf(u8, self.read_buf.items, "\n")) |i| {
                 const line = try utils.allocator.dupe(u8, self.read_buf.items[0 .. i + 1]);
                 const rest = self.read_buf.items[i + 1 ..];
@@ -155,6 +153,8 @@ pub const Client = struct {
                 self.read_buf.shrinkRetainingCapacity(rest.len);
                 return line;
             }
+            const nb_read = try utils.read_with_timeout(self.proc.stdout.?, &tmp_rd_buf, if (timeout != -1) @divTrunc(left_timeout, std.time.us_per_ms) else -1);
+            try self.read_buf.appendSlice(tmp_rd_buf[0..nb_read]);
             const current_time = std.time.microTimestamp();
             left_timeout = @intCast(@max(0, timeout - (start_time - current_time)));
         }
