@@ -26,13 +26,14 @@ pub const Context = struct {
         return .{
             .conf = conf,
             .board = try game.Game.init(conf.game_board_size),
-            .web_srv = try Web.Server.init(conf),
+            .web_srv = if (conf.web_enable) try Web.Server.init(conf) else undefined,
         };
     }
 
     pub fn deinit(self: *Self) void {
         self.board.deinit();
-        self.web_srv.deinit();
+        if (self.conf.web_enable)
+            self.web_srv.deinit();
     }
 };
 
@@ -84,7 +85,8 @@ pub fn launch_server(conf: *const config.Config) !void {
 
     const stdin = std.io.getStdIn().reader();
 
-    try ctx.web_srv.launch_in_background();
+    if (conf.web_enable)
+        try ctx.web_srv.launch_in_background();
 
     const board_log_file = try std.fs.cwd().createFile(
         conf.log_board_file,
@@ -114,14 +116,14 @@ pub fn launch_server(conf: *const config.Config) !void {
     var pos1 = player1.begin(&ctx) catch |e| return handle_player_error(e, 1);
     var end_time = std.time.microTimestamp();
     _ = ctx.board.place(pos1, .Player1) catch |e| return handle_player_error(e, 1); // Is never a winning move
-    try ctx.web_srv.push_move(pos1, .Player1);
+    if (conf.web_enable) try ctx.web_srv.push_move(pos1, .Player1);
     try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
     try while (true) {
         start_time = std.time.microTimestamp();
         const pos2 = player2.turn(&ctx, pos1) catch |e| break handle_player_error(e, 1);
         end_time = std.time.microTimestamp();
         const pos2_win = ctx.board.place(pos2, .Player2) catch |e| break handle_player_error(e, 1);
-        try ctx.web_srv.push_move(pos2, .Player2);
+        if (conf.web_enable) try ctx.web_srv.push_move(pos2, .Player2);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos2, num_move, 2, end_time - start_time);
         if (pos2_win) {
@@ -137,7 +139,7 @@ pub fn launch_server(conf: *const config.Config) !void {
         pos1 = player1.turn(&ctx, pos2) catch |e| break handle_player_error(e, 1);
         end_time = std.time.microTimestamp();
         const pos1_win = ctx.board.place(pos1, .Player1) catch |e| break handle_player_error(e, 1);
-        try ctx.web_srv.push_move(pos1, .Player1);
+        if (conf.web_enable) try ctx.web_srv.push_move(pos1, .Player1);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
         if (pos1_win) {

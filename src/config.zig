@@ -17,6 +17,7 @@ pub const Config = struct {
     log_board_file: []const u8,
     log_board_color: bool,
 
+    web_enable: bool,
     web_address: []const u8,
     web_port: u16,
 
