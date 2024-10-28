@@ -99,7 +99,7 @@ pub const Client = struct {
         try self.send_start(ctx);
         const start_resp = self.get_command_with_timeout(5 * std.time.ms_per_s) catch |e| {
             if (e == error.TimeoutError)
-                logz.fatal().ctx("AI did not answer to ABOUT command in time!").log();
+                logz.fatal().ctx("AI did not answer to START command in time!").log();
             return e;
         };
         if (start_resp == null) {
