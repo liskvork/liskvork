@@ -130,7 +130,7 @@ pub fn launch_server(conf: *const config.Config) !void {
             logz.info().ctx("Player 2 wins!").log();
             break;
         }
-        if (num_move >= 200) {
+        if (num_move >= ctx.conf.game_board_size * ctx.conf.game_board_size) {
             logz.info().ctx("I don't know how you did it, but it's a tie! The board is full.").log();
             break;
         }
@@ -144,6 +144,10 @@ pub fn launch_server(conf: *const config.Config) !void {
         try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
         if (pos1_win) {
             logz.info().ctx("Player 1 wins!").log();
+            break;
+        }
+        if (num_move >= ctx.conf.game_board_size * ctx.conf.game_board_size) {
+            logz.info().ctx("I don't know how you did it, but it's a tie! The board is full.").log();
             break;
         }
     };
