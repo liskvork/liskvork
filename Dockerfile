@@ -17,4 +17,6 @@ WORKDIR /
 
 COPY --from=builder /work/zig-out/bin/liskvork .
 
+WORKDIR /data
+
 ENTRYPOINT ["/liskvork"]
