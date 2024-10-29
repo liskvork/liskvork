@@ -1,4 +1,4 @@
-FROM alpine:edge as builder
+FROM alpine:edge AS builder
 
 ARG BUILD_VERSION=0.0.0
 
