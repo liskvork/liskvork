@@ -58,7 +58,7 @@ Get the binary from https://releases.liskvork.org and then just launch it.
 
 ```sh
 # Once compiled with docker
-docker run liskvork
+docker run -v $(pwd):/data/:Z liskvork
 ```
 
 ## Configuration
