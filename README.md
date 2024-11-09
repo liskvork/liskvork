@@ -1,25 +1,19 @@
 # liskvork
 
-[![builds.sr.ht status](https://builds.sr.ht/~emneo/liskvork.svg)](https://builds.sr.ht/~emneo/liskvork)
-
 Modern multi-platform gomoku game server.
 
 Linux, Windows and MacOS support (with priority to Linux) on both x86_64 and
 aarch64.
 
-Main repository URL: <https://git.sr.ht/~emneo/liskvork>
+Main repository URL: <https://github.com/liskvork/liskvork>
 
 ## Reporting bugs/Submitting patches
 
-You can see open tickets over at [here](https://todo.sr.ht/~emneo/liskvork).
+You can see open tickets and report bugs over
+[here](https://github.com/liskvork/liskvork/issues).
 
-You can submit bug reports and patches over at the
-[mailing lists](https://sr.ht/~emneo/liskvork/lists)
-(yes that means sending a mail, it is not hard.)
-
-The ticket board is only opened to maintainers, so if you need to report a bug
-do it on the mailing lists, if the bug report is accepted it will be listed in
-the ticket board.
+You can submit patches/PRs over
+[here](https://github.com/liskvork/liskvork/pulls).
 
 ## Building from source
 
@@ -43,7 +37,9 @@ zig build -Doptimize=ReleaseSafe
 
 ## Installing
 
-Get the binary from https://releases.liskvork.org and then just launch it.
+Get the binary from
+[Github release tab](https://github.com/liskvork/liskvork/releases) and then
+just launch it.
 
 ## Launching liskvork
 
