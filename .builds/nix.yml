@@ -1,9 +1,0 @@
-image: nixos/unstable
-
-tasks:
-  - flake-check: |
-      cd liskvork
-      nix --extra-experimental-features "nix-command flakes" flake check --all-systems
-  - nix-build: |
-      cd liskvork
-      nix --extra-experimental-features "nix-command flakes" build
