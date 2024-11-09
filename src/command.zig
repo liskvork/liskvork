@@ -131,7 +131,7 @@ pub const ClientCommand = union(enum) {
 };
 
 const log_starters = [_][]const u8{
-    "INFO",
+    "MESSAGE",
     "DEBUG",
     "ERROR",
     "UNKNOWN",
