@@ -72,7 +72,7 @@ pub const Client = struct {
         self.proc = std.process.Child.init(&.{self.filepath}, utils.allocator);
         self.proc.stdout_behavior = .Pipe;
         self.proc.stdin_behavior = .Pipe;
-        self.proc.stderr_behavior = .Ignore;
+        self.proc.stderr_behavior = .Inherit;
 
         logz.debug().ctx("Spawning process").string("filepath", self.filepath).log();
         try self.proc.spawn();
