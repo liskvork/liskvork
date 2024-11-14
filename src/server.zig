@@ -13,6 +13,8 @@ const Client = client.Client;
 const game = @import("game.zig");
 const Web = @import("web.zig");
 
+const WriteError = @import("std").posix.WriteError;
+
 pub const Context = struct {
     const Self = @This();
 
@@ -74,7 +76,12 @@ fn handle_player_error(e: anyerror, num_player: u2) !void {
         game.Error.AlreadyTaken => {
             logz.err().ctx("Player gave a position that's already in use").int("player", num_player).log();
         },
-        else => return e,
+        WriteError.BrokenPipe => {
+            logz.err().ctx("Player has a broken pipe! Did your AI crash/close?").int("player", num_player).log();
+        },
+        else => {
+            logz.err().ctx("Unhandled error").int("player", num_player).stringSafe("errorName", @errorName(e)).log();
+        },
     }
     call_winning_player(winning_player);
 }
