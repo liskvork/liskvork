@@ -470,7 +470,7 @@ test "info log parsing with whitespace" {
     const t = std.testing;
     const alloc = t.allocator;
 
-    const cmd = try parse("INFO \t  \t      issou that works", alloc);
+    const cmd = try parse("MESSAGE \t  \t      issou that works", alloc);
     try t.expect(cmd != null);
 
     defer cmd.?.deinit();
