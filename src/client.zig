@@ -42,13 +42,15 @@ pub const Client = struct {
     turn_time: u64,
     proc: std.process.Child = undefined,
     read_buf: std.ArrayList(u8),
+    p_num: u2,
 
-    pub fn init(filepath: []const u8, conf: *const config.Config) !Client {
+    pub fn init(filepath: []const u8, conf: *const config.Config, p_num: u2) !Client {
         return .{
             .filepath = try utils.allocator.dupe(u8, filepath),
             .match_time_remaining = conf.game_timeout_match,
             .turn_time = conf.game_timeout_turn,
             .read_buf = std.ArrayList(u8).init(utils.allocator),
+            .p_num = p_num,
         };
     }
 
@@ -126,7 +128,7 @@ pub const Client = struct {
     }
 
     fn send_message(self: *Self, msg: []const u8) !void {
-        logz.debug().ctx("Sending message").string("data", std.mem.trim(u8, msg, &std.ascii.whitespace)).log();
+        logz.debug().ctx("Sending message").string("data", std.mem.trim(u8, msg, &std.ascii.whitespace)).int("player", self.p_num).log();
         // Not sure if this can block at all, but it will for for now
         try self.proc.stdin.?.writeAll(msg);
     }
@@ -134,6 +136,7 @@ pub const Client = struct {
     fn get_command_with_timeout(self: *Self, timeout: i32) !?command.ClientCommand {
         const line = try self.get_line_with_timeout(timeout);
         defer utils.allocator.free(line);
+        logz.debug().ctx("Received message").string("data", std.mem.trim(u8, line, &std.ascii.whitespace)).int("player", self.p_num).log();
         const cmd = try command.parse(line, utils.allocator);
         if (cmd == null)
             logz.err().ctx("Could not parse command").string("data", line).log();
