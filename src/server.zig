@@ -101,9 +101,9 @@ pub fn launch_server(conf: *const config.Config) !void {
     );
     defer board_log_file.close();
 
-    var player1 = try Client.init(conf.game_player1, conf);
+    var player1 = try Client.init(conf.game_player1, conf, 1);
     defer player1.deinit();
-    var player2 = try Client.init(conf.game_player2, conf);
+    var player2 = try Client.init(conf.game_player2, conf, 2);
     defer player2.deinit();
     try player1.start_process(&ctx);
     defer player1.stop_child() catch @panic("How?");
