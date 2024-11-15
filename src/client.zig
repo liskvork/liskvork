@@ -32,11 +32,30 @@ const ClientError = error{
     BadCommand,
 };
 
+pub const ClientInfo = struct {
+    const Self = @This();
+
+    k: []const u8,
+    v: []const u8,
+
+    pub fn init(k: []const u8, v: []const u8) !Self {
+        return .{
+            .k = try utils.allocator.dupe(u8, k),
+            .v = try utils.allocator.dupe(u8, v),
+        };
+    }
+
+    pub fn deinit(self: *const Self) void {
+        utils.allocator.free(self.k);
+        utils.allocator.free(self.v);
+    }
+};
+
 pub const Client = struct {
     const Self = @This();
 
     stopping: bool = false,
-    infos: ?command.ClientResponseAbout = null,
+    infos: std.ArrayList(ClientInfo) = undefined,
     filepath: []const u8,
     match_time_remaining: u64,
     turn_time: u64,
@@ -91,7 +110,7 @@ pub const Client = struct {
         }
         defer about_resp.?.deinit();
         switch (about_resp.?) {
-            .ResponseAbout => |e| self.infos = try e.dupe(utils.allocator),
+            .ResponseAbout => |e| self.infos = e,
             else => {
                 logz.fatal().ctx("Did not get proper ABOUT answer from AI!").log();
                 return error.BadInitialization;
@@ -119,12 +138,10 @@ pub const Client = struct {
 
         try self.send_all_infos(ctx);
 
-        var l = logz.info().ctx("Finished initialization").string("name", self.infos.?.name);
-        defer l.log();
-        if (self.infos.?.author) |i| l = l.string("author", i);
-        if (self.infos.?.version) |i| l = l.string("version", i);
-        if (self.infos.?.country) |i| l = l.string("country", i);
-        if (self.infos.?.www) |i| l = l.string("www", i);
+        var l = logz.info().ctx("Finished initialization");
+        for (self.infos.items) |i|
+            l = l.string(i.k, i.v);
+        l.log();
     }
 
     fn send_message(self: *Self, msg: []const u8) !void {
@@ -228,12 +245,11 @@ pub const Client = struct {
     }
 
     fn handle_log(self: *Self, l: *const command.ClientCommandLog) void {
-        std.debug.assert(self.infos != null);
         switch (l.msg_type) {
-            .Info => logz.info().ctx("info from client").string("name", self.infos.?.name).string("msg", l.data).log(),
-            .Error => logz.info().ctx("error from client").string("name", self.infos.?.name).string("msg", l.data).log(),
-            .Debug => logz.info().ctx("debug from client").string("name", self.infos.?.name).string("msg", l.data).log(),
-            .Unknown => logz.warn().ctx("unknown from client").string("name", self.infos.?.name).string("msg", l.data).log(),
+            .Info => logz.info().ctx("info from client").int("player", self.p_num).string("msg", l.data).log(),
+            .Error => logz.info().ctx("error from client").int("player", self.p_num).string("msg", l.data).log(),
+            .Debug => logz.info().ctx("debug from client").int("player", self.p_num).string("msg", l.data).log(),
+            .Unknown => logz.warn().ctx("unknown from client").int("player", self.p_num).string("msg", l.data).log(),
         }
     }
 
@@ -280,8 +296,9 @@ pub const Client = struct {
     }
 
     pub fn deinit(self: *const Self) void {
-        if (self.infos) |i|
+        for (self.infos.items) |i|
             i.deinit();
+        self.infos.deinit();
         utils.allocator.free(self.filepath);
         self.read_buf.deinit();
     }
