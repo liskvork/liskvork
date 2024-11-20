@@ -62,6 +62,7 @@ pub const Client = struct {
     proc: std.process.Child = undefined,
     read_buf: std.ArrayList(u8),
     p_num: u2,
+    initialized: bool = false,
 
     pub fn init(filepath: []const u8, conf: *const config.Config, p_num: u2) !Client {
         return .{
@@ -142,6 +143,7 @@ pub const Client = struct {
         for (self.infos.items) |i|
             l = l.string(i.k, i.v);
         l.log();
+        self.initialized = true;
     }
 
     fn send_message(self: *Self, msg: []const u8) !void {
@@ -296,9 +298,11 @@ pub const Client = struct {
     }
 
     pub fn deinit(self: *const Self) void {
-        for (self.infos.items) |i|
-            i.deinit();
-        self.infos.deinit();
+        if (self.initialized) {
+            for (self.infos.items) |i|
+                i.deinit();
+            self.infos.deinit();
+        }
         utils.allocator.free(self.filepath);
         self.read_buf.deinit();
     }
