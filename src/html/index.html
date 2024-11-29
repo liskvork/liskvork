@@ -48,6 +48,8 @@
           return;
         const i = "r" + line[0] + "c" + line[1];
         let el = document.getElementById(i);
+        if el == null:
+          return;
         el.innerHTML = line[2] === "1" ? 'O' : 'X';
         el.style.backgroundColor = line[2] === "1" ? 'blue' : 'red';
         el.style.color = 'white';
