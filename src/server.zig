@@ -127,7 +127,7 @@ pub fn launch_server(conf: *const config.Config) !void {
     try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
     try while (true) {
         start_time = std.time.microTimestamp();
-        const pos2 = player2.turn(&ctx, pos1) catch |e| break handle_player_error(e, 1);
+        const pos2 = player2.turn(&ctx, pos1) catch |e| break handle_player_error(e, 2);
         end_time = std.time.microTimestamp();
         const pos2_win = ctx.board.place(pos2, .Player2) catch |e| break handle_player_error(e, 1);
         if (conf.web_enable) try ctx.web_srv.push_move(pos2, .Player2);
