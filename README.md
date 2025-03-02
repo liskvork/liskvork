@@ -59,6 +59,8 @@ docker run -v $(pwd):/data/:Z liskvork
 
 ### Nix
 
+This method might be broken as it is not maintained anymore.
+
 ```sh
 # On a system with nix installed and flakes activated
 nix run github:liskvork/liskvork
