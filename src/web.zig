@@ -20,12 +20,6 @@ fn handle_not_found(_: *httpz.Request, res: *httpz.Response) !void {
     res.body = "Not Found";
 }
 
-fn handle_errors(req: *httpz.Request, res: *httpz.Response, err: anyerror) void {
-    res.status = 500;
-    res.body = "Internal Server Error";
-    logz.warn().ctx("httpz: unhandled exception").string("request", req.url.raw).fmt("err", "{}", .{err}).log();
-}
-
 const root_file = @embedFile("html/index.html");
 
 fn handle_root(_: *httpz.Request, res: *httpz.Response) !void {
@@ -38,40 +32,6 @@ fn handle_moves(req: *httpz.Request, res: *httpz.Response) !void {
     moves_mtx.lock();
     defer moves_mtx.unlock();
     res.body = try req.arena.dupe(u8, moves_str_cache.items);
-}
-
-const WsContext = struct {};
-
-const WsHandler = struct {
-    const Self = @This();
-
-    ctx: WsContext,
-    conn: *websocket.Conn,
-    pub fn init(conn: *websocket.Conn, ctx: WsContext) !Self {
-        return .{
-            .ctx = ctx,
-            .conn = conn,
-        };
-    }
-
-    pub fn handle(self: *WsHandler, _: websocket.Message) !void {
-        moves_mtx.lock();
-        defer moves_mtx.unlock();
-        try self.conn.write(moves_str_cache.items);
-    }
-
-    pub fn close(_: *WsHandler) void {}
-};
-
-fn ws(req: *httpz.Request, res: *httpz.Response) !void {
-    if (try httpz.upgradeWebsocket(WsHandler, req, res, WsContext{}) == false) {
-        // this was not a valid websocket handshake request
-        // you should probably return with an error
-        res.status = 400;
-        res.body = "invalid websocket handshake";
-        return;
-    }
-    // when upgradeWebsocket succeeds, you can no longer use `res`
 }
 
 pub const Move = struct {
@@ -94,30 +54,60 @@ pub const Move = struct {
 pub const Server = struct {
     const Self = @This();
 
-    srv: httpz.ServerCtx(void, void),
+    srv: httpz.Server(void),
     thr: std.Thread = undefined,
 
     pub fn init(cf: *const config.Config) !Self {
-        var srv = try httpz.Server().init(
+        var srv = try httpz.Server(void).init(
             utils.allocator,
             .{
                 .port = cf.web_port,
                 .address = cf.web_address,
             },
+            {},
         );
-        srv.notFound(handle_not_found);
-        srv.errorHandler(handle_errors);
 
-        const router = srv.router();
-        router.get("/", handle_root);
-        router.get("/moves", handle_moves);
-        router.get("/ws", ws);
+        const router = try srv.router(.{});
+        router.all("/*", handle_not_found, .{});
+        router.get("/", handle_root, .{});
+        router.get("/moves", handle_moves, .{});
+        // TODO: Fix websocket connections
+        // router.get("/ws", ws, .{});
 
         conf = cf;
 
         return .{
             .srv = srv,
         };
+    }
+
+    pub const WebsocketContext = struct {};
+
+    pub const WebsocketHandler = struct {
+        conn: *websocket.Conn,
+
+        pub fn init(conn: *websocket.Conn, _: WebsocketContext) !WebsocketHandler {
+            return .{
+                .conn = conn,
+            };
+        }
+
+        pub fn clientMessage(self: *WebsocketHandler, _: []const u8) !void {
+            moves_mtx.lock();
+            defer moves_mtx.unlock();
+            try self.conn.write(moves_str_cache.items);
+        }
+    };
+
+    fn ws(req: *httpz.Request, res: *httpz.Response) !void {
+        if (try httpz.upgradeWebsocket(WebsocketHandler, req, res, WebsocketContext{}) == false) {
+            // this was not a valid websocket handshake request
+            // you should probably return with an error
+            res.status = 400;
+            res.body = "invalid websocket handshake";
+            return;
+        }
+        // when upgradeWebsocket succeeds, you can no longer use `res`
     }
 
     pub fn launch_in_background(self: *Self) !void {
