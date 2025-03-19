@@ -1,25 +1,25 @@
 .{
-    .name = "liskvork",
+    .name = .liskvork,
+    .fingerprint = 0x55aa8a61d457c3b1,
     .version = "0.2.0-dev",
-    .minimum_zig_version = "0.13.0",
+    .minimum_zig_version = "0.14.0",
 
     .dependencies = .{
         .ini = .{
-            .url = "https://github.com/ziglibs/ini/archive/e18d36665905c1e7ba0c1ce3e8780076b33e3002.tar.gz",
-            .hash = "1220b0979ea9891fa4aeb85748fc42bc4b24039d9c99a4d65d893fb1c83e921efad8",
-        },
-        // logz on 0.13.0 branch
-        .logz = .{
-            .url = "https://github.com/karlseguin/log.zig/archive/97d0818270a357d3ce7bc878abc32dc996fe78ff.tar.gz",
-            .hash = "1220c032d828e768348b321a79523812be1c4cb27e1eb7ff5df54b573fa131afd448",
+            .url = "https://github.com/ziglibs/ini/archive/30afc2fc875ff817af0ffe490481f6f8aa3b5cd4.tar.gz",
+            .hash = "ini-0.1.0-YCQ9YsQlAACRplKkaUUXQLWVh2P1VULCsaS4JHhmkJRe",
         },
         .zul = .{
-            .url = "https://github.com/karlseguin/zul/archive/08c989bf6871e87807a4668232913ee245425863.tar.gz",
-            .hash = "12206f5d1e5bd4793fe952bbae891b7424a19026e0d296a1381074c7d21d5d76c1a1",
+            .url = "https://github.com/karlseguin/zul/archive/d9142c73aedc5698beba58b3fbf2bcfe69864778.tar.gz",
+            .hash = "zul-0.0.0-1oDot0BCBwA9cUo5OOrPs5NGmvoM7sk1ztfbdfL7mh4P",
         },
         .httpz = .{
-            .url = "https://github.com/karlseguin/http.zig/archive/7d2ddae87af9b110783085c0ea6b03985faa4584.tar.gz",
-            .hash = "12208c1f2c5f730c4c03aabeb0632ade7e21914af03e6510311b449458198d0835d6",
+            .url = "https://github.com/karlseguin/http.zig/archive/cb760afdb50b1e4b3f37570e6ddbbd04bf9d5c32.tar.gz",
+            .hash = "httpz-0.0.0-PNVzrK6uBgBYP4D-QGrd_g1A6ZS86NQcLJZEPZyRFFoH",
+        },
+        .logz = .{
+            .url = "https://github.com/karlseguin/log.zig/archive/0fda1215eb5f7bbdf6d910f93fd5cc69980b8438.tar.gz",
+            .hash = "logz-0.0.0-O9YWXmtHAgBi1Md85aVcpDaNx2RkqS_16edKmdfNeOyG",
         },
     },
     .paths = .{

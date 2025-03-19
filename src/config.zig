@@ -34,21 +34,21 @@ pub const ConfigError = error{
 };
 
 fn make_opt_struct(comptime in: type) type {
-    if (@typeInfo(in) != .Struct) @compileError("Type must be a struct type.");
+    if (@typeInfo(in) != .@"struct") @compileError("Type must be a struct type.");
     var fields: [std.meta.fields(in).len]std.builtin.Type.StructField = undefined;
     for (std.meta.fields(in), 0..) |t, i| {
-        const fieldType = @Type(.{ .Optional = .{ .child = t.type } });
+        const fieldType = @Type(.{ .optional = .{ .child = t.type } });
         const fieldName: [:0]const u8 = t.name[0..];
         fields[i] = .{
             .name = fieldName,
             .type = fieldType,
-            .default_value = &@as(fieldType, null),
+            .default_value_ptr = &@as(fieldType, null),
             .is_comptime = false,
             .alignment = 0,
         };
     }
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .layout = .auto,
             .fields = fields[0..],
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -88,9 +88,9 @@ const ini_field = struct {
 fn map_opt_struct_to_struct(opt_stc: type, stc: type, from: *const opt_stc) !stc {
     var to: stc = undefined;
     inline for (std.meta.fields(opt_stc)) |f| {
-        if (@typeInfo(f.type) != .Optional)
+        if (@typeInfo(f.type) != .optional)
             @compileError("Field " ++ f.name ++ " from " ++ @typeName(opt_stc) ++ " has type " ++ @typeName(f.type) ++ " that is not optional");
-        const target_type = @typeInfo(f.type).Optional.child;
+        const target_type = @typeInfo(f.type).optional.child;
         const current_target_type = @TypeOf(@field(to, f.name));
         if (target_type != current_target_type)
             @compileError("Field " ++ f.name ++ " has mismatched types " ++ @typeName(target_type) ++ " != " ++ @typeName(current_target_type));
@@ -106,9 +106,9 @@ fn map_opt_struct_to_struct(opt_stc: type, stc: type, from: *const opt_stc) !stc
 fn map_value(kv: ini_field, conf: *tmp_config, allocator: std.mem.Allocator) !void {
     inline for (std.meta.fields(@TypeOf(conf.*))) |f| {
         if (std.mem.eql(u8, f.name, kv.full_name)) {
-            const target_type = @typeInfo(f.type).Optional.child;
+            const target_type = @typeInfo(f.type).optional.child;
             // Handle enums first
-            if (@typeInfo(target_type) == .Enum) {
+            if (@typeInfo(target_type) == .@"enum") {
                 if (std.meta.stringToEnum(target_type, kv.value)) |h| {
                     @field(conf, f.name) = h;
                     return;
