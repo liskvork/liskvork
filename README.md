@@ -41,7 +41,7 @@ docker build . --build-arg BUILD_VERSION=0.0.0-dev -t liskvork
 
 #### Dependencies
 
-- zig 0.13.0 (May work with newer versions but has not been tested)
+- zig 0.14.0 (May work with newer versions but has not been tested)
 
 #### Step
 
