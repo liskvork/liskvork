@@ -2,10 +2,24 @@
 
 Modern multi-platform gomoku game server.
 
-Linux, Windows and MacOS support (with priority to Linux) on both x86_64 and
-aarch64.
-
 Main repository URL: <https://github.com/liskvork/liskvork>
+
+## Support
+
+|              | x86-64 | aarch64 |
+|--------------|--------|---------|
+| Linux (GNU)  | 🟢     | 🟡      |
+| Linux (MUSL) | 🟢     | 🟡      |
+| Windows      | 🟡     | 🟡      |
+| MacOS        | 🟡     | 🟡      |
+| OpenBSD      | 🔴     | 🔴      |
+| FreeBSD      | 🔴     | 🔴      |
+
+🟢 - Supported and actively tested
+
+🟡 - Supported but not actively tested
+
+🔴 - Not supported
 
 ## Reporting bugs/Submitting patches
 
