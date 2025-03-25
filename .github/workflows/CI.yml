@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: goto-bus-stop/setup-zig@v2
         with:
-          version: 0.13.0
+          version: 0.14.0
       - run: zig build -Doptimize=${{matrix.build_type}} -Dbuild_all -Dversion=0.0.0-nightly --summary all
 
   test:
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: goto-bus-stop/setup-zig@v2
         with:
-          version: 0.13.0
+          version: 0.14.0
       - run: zig build -Doptimize=${{matrix.build_type}} test --summary all
 
   lint:
@@ -40,5 +40,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: goto-bus-stop/setup-zig@v2
         with:
-          version: 0.13.0
+          version: 0.14.0
       - run: zig fmt --check .
