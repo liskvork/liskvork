@@ -127,6 +127,10 @@ pub fn build(b: *std.Build) !void {
     const native_target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    comptime {
+        if (@import("builtin").zig_version.order(.{ .major = 0, .minor = 14, .patch = 0 }) == .lt) @compileError("liskvork requires zig version >= 0.14.0");
+    }
+
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
