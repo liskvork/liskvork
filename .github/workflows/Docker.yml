@@ -1,0 +1,59 @@
+name: Build Docker images(s)
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  IMAGE_TAG: ghcr.io/liskvork/liskvork
+
+permissions:
+  packages: write
+  contents: read
+
+jobs: 
+  build:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: true
+      matrix: 
+        arch: [ amd64, arm64v8 ]
+        include:
+          - arch: amd64
+            platform: linux/amd64
+          - arch: arm64v8
+            platform: linux/arm64
+    steps: 
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/metadata-action@v5
+        id: image-metadata
+        with: 
+          images: ${{ env.IMAGE_TAG }}
+          tags: |
+            type=raw,value=${{ matrix.arch }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          push: true
+          platforms: ${{ matrix.platform }}
+          tags: ${{ steps.image-metadata.outputs.tags }}
+        
+  merge:
+    runs-on: ubuntu-20.04
+    needs: [ build ]
+    steps: 
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          docker buildx imagetools create \
+            --tag ${{ env.IMAGE_TAG }}:latest ${{ env.IMAGE_TAG }}:{amd64,arm64v8}
