@@ -79,6 +79,11 @@ just launch it.
 docker run -v $(pwd):/data/:Z liskvork
 ```
 
+```sh
+# Or pulled from the repos
+docker run -v $(pwd):/data/:Z ghcr.io/liskvork/liskvork:latest
+```
+
 ## Configuration
 
 Look at the default `config.ini` that's created when launching for the first
