@@ -6,6 +6,12 @@ Main repository URL: <https://github.com/liskvork/liskvork>
 
 [![CI](https://github.com/liskvork/liskvork/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/liskvork/liskvork/actions/workflows/CI.yml)
 
+## License
+
+liskvork is licensed under the
+[European Union Public License 1.2](https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12)
+or later.
+
 ## Support
 
 |              | x86-64 | aarch64 |
