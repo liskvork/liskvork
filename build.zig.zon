@@ -1,7 +1,7 @@
 .{
     .name = .liskvork,
     .fingerprint = 0x55aa8a61d457c3b1,
-    .version = "0.2.0-dev",
+    .version = "0.5.1-dev",
     .minimum_zig_version = "0.14.0",
 
     .dependencies = .{
@@ -12,10 +12,6 @@
         .zul = .{
             .url = "https://github.com/karlseguin/zul/archive/d9142c73aedc5698beba58b3fbf2bcfe69864778.tar.gz",
             .hash = "zul-0.0.0-1oDot0BCBwA9cUo5OOrPs5NGmvoM7sk1ztfbdfL7mh4P",
-        },
-        .httpz = .{
-            .url = "https://github.com/karlseguin/http.zig/archive/cb760afdb50b1e4b3f37570e6ddbbd04bf9d5c32.tar.gz",
-            .hash = "httpz-0.0.0-PNVzrK6uBgBYP4D-QGrd_g1A6ZS86NQcLJZEPZyRFFoH",
         },
         .logz = .{
             .url = "https://github.com/karlseguin/log.zig/archive/db6ec9818cc6dabf853c3271d8fecb7af5d4755c.tar.gz",
