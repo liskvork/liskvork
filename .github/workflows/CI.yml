@@ -19,7 +19,7 @@ jobs:
       - uses: goto-bus-stop/setup-zig@v2
         with:
           version: 0.14.0
-      - run: zig build -Doptimize=${{matrix.build_type}} -Dbuild_all -Dversion=0.0.0-nightly --summary all
+      - run: zig build -Doptimize=${{matrix.build_type}} -Dbuild_all --summary all
 
   test:
     strategy:
