@@ -4,6 +4,8 @@ Modern multi-platform gomoku game server.
 
 Main repository URL: <https://github.com/liskvork/liskvork>
 
+[![CI](https://github.com/liskvork/liskvork/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/liskvork/liskvork/actions/workflows/CI.yml)
+
 ## Support
 
 |              | x86-64 | aarch64 |
