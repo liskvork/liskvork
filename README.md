@@ -88,3 +88,7 @@ docker run -v $(pwd):/data/:Z ghcr.io/liskvork/liskvork:latest
 
 Look at the default `config.ini` that's created when launching for the first
 time everything (should) be documented properly to configure it.
+
+## Misc
+
+![Alt](https://repobeats.axiom.co/api/embed/c5bcdf9020dfd765f02b6606414c7b7f3e54cb9e.svg "Repobeats analytics image")
