@@ -23,7 +23,7 @@
     ]
     (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-      zig = pkgs.zig_0_13;
+      zig = pkgs.zig_0_14;
     in rec {
       formatter = pkgs.alejandra;
 
