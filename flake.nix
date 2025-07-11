@@ -1,7 +1,6 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
 
     pre-commit-hooks = {
       url = "github:cachix/git-hooks.nix";
@@ -12,66 +11,68 @@
   outputs = {
     self,
     nixpkgs,
-    flake-utils,
     pre-commit-hooks,
-  }:
-    flake-utils.lib.eachSystem [
-      "x86_64-linux"
-      "x86_64-darwin"
-      "aarch64-darwin"
-      "aarch64-linux"
-    ]
-    (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-      zig = pkgs.zig_0_14;
-    in rec {
-      formatter = pkgs.alejandra;
+  }: let
+    forAllSystems = function:
+      nixpkgs.lib.genAttrs [
+        "x86_64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+        "aarch64-linux"
+      ] (system: function nixpkgs.legacyPackages.${system});
+  in {
+    formatter = forAllSystems (pkgs: pkgs.alejandra);
 
-      checks = let
-        hooks = {
-          alejandra.enable = true;
-          check-merge-conflicts.enable = true;
-          check-shebang-scripts-are-executable.enable = true;
-          check-added-large-files.enable = true;
-          zig-fmt = {
-            enable = true;
-            entry = "${zig}/bin/zig fmt --check .";
-            files = "\\.z(ig|on)$";
-          };
-        };
-      in {
-        pre-commit-check = pre-commit-hooks.lib.${system}.run {
-          inherit hooks;
-          src = ./.;
+    checks = forAllSystems (pkgs: let
+      inherit (pkgs) lib system;
+
+      hooks = {
+        alejandra.enable = true;
+        check-merge-conflicts.enable = true;
+        check-shebang-scripts-are-executable.enable = true;
+        check-added-large-files.enable = true;
+        zig-fmt = {
+          enable = true;
+          entry = "${lib.getExe pkgs.zig} fmt --check .";
+          files = "\\.z(ig|on)$";
         };
       };
+    in {
+      pre-commit-check = pre-commit-hooks.lib.${system}.run {
+        inherit hooks;
+        src = ./.;
+      };
+    });
 
-      devShells.default = pkgs.mkShell {
-        inherit (self.checks.${system}.pre-commit-check) shellHook;
+    devShells = forAllSystems (pkgs: {
+      default = pkgs.mkShell {
+        inherit (self.checks.${pkgs.system}.pre-commit-check) shellHook;
 
         name = "liskvork";
-        inputsFrom = pkgs.lib.attrsets.attrValues packages;
+        inputsFrom = pkgs.lib.attrsets.attrValues self.packages.${pkgs.system};
         packages = with pkgs; [
           zls
         ];
       };
+    });
 
-      packages = rec {
-        liskvork = default;
-        default = pkgs.stdenv.mkDerivation {
-          name = "liskvork";
+    packages = forAllSystems (pkgs: {
+      liskvork = self.packages.${pkgs.system}.default;
 
-          XDG_CACHE_HOME = "${placeholder "out"}";
+      default = pkgs.stdenv.mkDerivation {
+        name = "liskvork";
 
-          src = pkgs.lib.cleanSource ./.;
-          buildInputs = [
-            zig.hook
-          ];
+        XDG_CACHE_HOME = "${placeholder "out"}";
 
-          postPatch = ''
-            ln -s ${pkgs.callPackage ./build.zig.zon.nix {}} $ZIG_GLOBAL_CACHE_DIR/p
-          '';
-        };
+        src = pkgs.lib.cleanSource ./.;
+        buildInputs = [
+          pkgs.zig.hook
+        ];
+
+        postPatch = ''
+          ln -s ${pkgs.callPackage ./build.zig.zon.nix {}} $ZIG_GLOBAL_CACHE_DIR/p
+        '';
       };
     });
+  };
 }
