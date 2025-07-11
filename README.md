@@ -87,8 +87,8 @@ docker run -v $(pwd):/data/:Z ghcr.io/liskvork/liskvork:latest
 ### Nix
 
 ```sh
-# On a system with nix installed and flakes activated
-nix run github:liskvork/liskvork
+nix --extra-experimental-features "nix-command flakes" \
+  run github:liskvork/liskvork
 ```
 
 ## Configuration
