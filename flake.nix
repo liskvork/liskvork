@@ -57,22 +57,9 @@
     });
 
     packages = forAllSystems (pkgs: {
-      liskvork = self.packages.${pkgs.system}.default;
+      default = self.packages.${pkgs.system}.liskvork;
 
-      default = pkgs.stdenv.mkDerivation {
-        name = "liskvork";
-
-        XDG_CACHE_HOME = "${placeholder "out"}";
-
-        src = pkgs.lib.cleanSource ./.;
-        buildInputs = [
-          pkgs.zig.hook
-        ];
-
-        postPatch = ''
-          ln -s ${pkgs.callPackage ./build.zig.zon.nix {}} $ZIG_GLOBAL_CACHE_DIR/p
-        '';
-      };
+      liskvork = pkgs.callPackage ./liskvork.nix {};
     });
   };
 }
