@@ -27,7 +27,7 @@ const targets = [_]std.Target.Query{
     },
 };
 
-const default_version_string = "0.0.0-dev";
+const default_version_string = "0.6.0-dev";
 
 const default_bin_name = "liskvork";
 
