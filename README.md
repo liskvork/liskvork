@@ -84,6 +84,13 @@ docker run -v $(pwd):/data/:Z liskvork
 docker run -v $(pwd):/data/:Z ghcr.io/liskvork/liskvork:latest
 ```
 
+### Nix
+
+```sh
+nix --extra-experimental-features "nix-command flakes" \
+  run github:liskvork/liskvork
+```
+
 ## Configuration
 
 Look at the default `config.ini` that's created when launching for the first
