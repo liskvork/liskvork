@@ -19,6 +19,7 @@ pub const Config = struct {
 
     other_auto_start: bool,
     other_auto_close: bool,
+    other_end_grace_time: u64,
 };
 
 pub const default_config = @embedFile("default_config.ini");
