@@ -148,7 +148,7 @@ pub fn build(b: *std.Build) !void {
                 false,
             );
     } else {
-        const liskvork = try configure_binary(
+        const binary = try configure_binary(
             b,
             opt,
             native_target,
@@ -157,10 +157,15 @@ pub fn build(b: *std.Build) !void {
             true,
         );
 
-        const run_liskvork = b.addRunArtifact(liskvork);
+        const run_cmd = b.addRunArtifact(binary);
+
+        run_cmd.step.dependOn(b.getInstallStep());
+        if (b.args) |args| {
+            run_cmd.addArgs(args);
+        }
 
         const run_step = b.step("run", "Run liskvork");
-        run_step.dependOn(&run_liskvork.step);
+        run_step.dependOn(&run_cmd.step);
     }
 
     const test_step = b.step("test", "Run unit tests");
