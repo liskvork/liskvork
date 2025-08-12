@@ -10,7 +10,7 @@ const utils = @import("utils.zig");
 const config = @import("config.zig");
 const client = @import("client.zig");
 const Client = client.Client;
-const game = @import("game.zig");
+const game = @import("gomoku_game");
 
 const WriteError = @import("std").posix.WriteError;
 
@@ -22,10 +22,10 @@ pub const Context = struct {
     game_launched: bool = false,
     board: game.Game,
 
-    pub fn init(conf: *const config.Config) !Context {
+    pub fn init(conf: *const config.Config, allocator: std.mem.Allocator) !Context {
         return .{
             .conf = conf,
-            .board = try game.Game.init(conf.game_board_size),
+            .board = try game.Game.init(conf.game_board_size, allocator),
         };
     }
 
@@ -82,7 +82,7 @@ fn handle_player_error(e: anyerror, num_player: u2) !void {
 }
 
 pub fn launch_server(conf: *const config.Config) !void {
-    var ctx = try Context.init(conf);
+    var ctx = try Context.init(conf, utils.allocator);
     defer ctx.deinit();
 
     const stdin = std.io.getStdIn().reader();

@@ -20,6 +20,13 @@ linkFarm "zig-packages" [
     };
   }
   {
+    name = "libgomoku-0.1.1-VjnJyISKAABgN8bDUfBnX3NpgPudQP69Y2bYvntzDat7";
+    path = fetchzip {
+      url = "https://github.com/liskvork/libgomoku/archive/refs/tags/0.1.1.tar.gz";
+      hash = "sha256-N/syc9JpDwmH7mTJVSC00CkGDEB8n4Y0WNRdFOztOKk=";
+    };
+  }
+  {
     name = "logz-0.0.0-O9YWXlhHAgD8srw1WqQ2SPde3T674hoD3mGFPCVCWFPS";
     path = fetchzip {
       url = "https://github.com/karlseguin/log.zig/archive/db6ec9818cc6dabf853c3271d8fecb7af5d4755c.tar.gz";

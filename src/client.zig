@@ -7,8 +7,8 @@ const build_config = @import("build_config");
 
 const server = @import("server.zig");
 const utils = @import("utils.zig");
-const command = @import("command.zig");
-const game = @import("game.zig");
+const protocol = @import("gomoku_protocol");
+const game = @import("gomoku_game");
 const config = @import("config.zig");
 
 const Allocator = std.mem.Allocator;
@@ -32,30 +32,11 @@ const ClientError = error{
     BadCommand,
 };
 
-pub const ClientInfo = struct {
-    const Self = @This();
-
-    k: []const u8,
-    v: []const u8,
-
-    pub fn init(k: []const u8, v: []const u8) !Self {
-        return .{
-            .k = try utils.allocator.dupe(u8, k),
-            .v = try utils.allocator.dupe(u8, v),
-        };
-    }
-
-    pub fn deinit(self: *const Self) void {
-        utils.allocator.free(self.k);
-        utils.allocator.free(self.v);
-    }
-};
-
 pub const Client = struct {
     const Self = @This();
 
     stopping: bool = false,
-    infos: std.ArrayList(ClientInfo) = undefined,
+    infos: std.ArrayList(protocol.ClientInfo) = undefined,
     filepath: []const u8,
     match_time_remaining: u64,
     turn_time: u64,
@@ -152,11 +133,11 @@ pub const Client = struct {
         try self.proc.stdin.?.writeAll(msg);
     }
 
-    fn get_command_with_timeout(self: *Self, timeout: i32) !?command.ClientCommand {
+    fn get_command_with_timeout(self: *Self, timeout: i32) !?protocol.ClientCommand {
         const line = try self.get_line_with_timeout(timeout);
         defer utils.allocator.free(line);
         logz.debug().ctx("Received message").string("data", std.mem.trim(u8, line, &std.ascii.whitespace)).int("player", self.p_num).log();
-        const cmd = try command.parse(line, utils.allocator);
+        const cmd = try protocol.parse(line, utils.allocator);
         if (cmd == null)
             logz.err().ctx("Could not parse command").string("data", line).log();
         return cmd;
@@ -246,7 +227,7 @@ pub const Client = struct {
         try self.send_message("END\r\n");
     }
 
-    fn handle_log(self: *Self, l: *const command.ClientCommandLog) void {
+    fn handle_log(self: *Self, l: *const protocol.ClientCommandLog) void {
         switch (l.msg_type) {
             .Info => logz.info().ctx("info from client").int("player", self.p_num).string("msg", l.data).log(),
             .Error => logz.info().ctx("error from client").int("player", self.p_num).string("msg", l.data).log(),
@@ -307,7 +288,7 @@ pub const Client = struct {
     pub fn deinit(self: *const Self) void {
         if (self.initialized) {
             for (self.infos.items) |i|
-                i.deinit();
+                i.deinit(utils.allocator);
             self.infos.deinit();
         }
         utils.allocator.free(self.filepath);
