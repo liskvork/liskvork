@@ -62,6 +62,7 @@ fn configure_tests(b: *std.Build, opt: build_options, target: std.Build.Resolved
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
+        .test_runner = .{ .path = b.path("test_runner.zig"), .mode = .simple },
     });
     add_options_to_bin(b, unit_tests, target, optimize, opt);
     return unit_tests;
@@ -171,7 +172,6 @@ pub fn build(b: *std.Build) !void {
     const unit_tests = configure_tests(b, opt, native_target, optimize);
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
-    // Uncomment ONLY if needed
-    // run_unit_tests.has_side_effects = true;
+    run_unit_tests.has_side_effects = true;
     test_step.dependOn(&run_unit_tests.step);
 }
