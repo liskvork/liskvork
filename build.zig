@@ -36,6 +36,7 @@ const build_options = struct {
     build_all: bool,
     bin_name: []const u8,
     use_system_allocator: bool,
+    llvm: bool,
 };
 
 fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, opt: build_options) void {
@@ -63,6 +64,7 @@ fn configure_tests(b: *std.Build, opt: build_options, target: std.Build.Resolved
         .target = target,
         .optimize = optimize,
         .test_runner = .{ .path = b.path("test_runner.zig"), .mode = .simple },
+        .use_llvm = opt.llvm,
     });
     add_options_to_bin(b, unit_tests, target, optimize, opt);
     return unit_tests;
@@ -91,6 +93,7 @@ fn configure_binary(b: *std.Build, opt: build_options, target: std.Build.Resolve
         .target = target,
         .optimize = optimize,
         .root_source_file = b.path("src/main.zig"),
+        .use_llvm = opt.llvm,
     });
     add_options_to_bin(b, bin, target, optimize, opt);
     b.installArtifact(bin);
@@ -119,6 +122,11 @@ fn set_build_options(b: *std.Build) build_options {
             "use_system_allocator",
             "use the system allocator (libc)",
         ) orelse false,
+        .llvm = b.option(
+            bool,
+            "llvm",
+            "Use LLVM backend",
+        ) orelse true,
     };
 }
 
