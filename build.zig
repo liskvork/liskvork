@@ -131,9 +131,7 @@ pub fn build(b: *std.Build) !void {
         }
     }
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    const allocator = b.allocator;
 
     const opt = set_build_options(b);
 
