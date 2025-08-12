@@ -484,7 +484,3 @@ test "error log parsing with whitespace" {
         },
     });
 }
-
-test {
-    std.testing.refAllDecls(@This());
-}

@@ -159,7 +159,3 @@ pub const Game = struct {
         utils.allocator.free(self.board);
     }
 };
-
-test {
-    std.testing.refAllDecls(@This());
-}

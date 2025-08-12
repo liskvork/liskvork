@@ -314,7 +314,3 @@ pub const Client = struct {
         self.read_buf.deinit();
     }
 };
-
-test {
-    std.testing.refAllDecls(@This());
-}

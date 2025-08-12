@@ -47,6 +47,8 @@ pub fn main() !void {
     logz.info().ctx("Closing liskvork").fmt("uptime", "{}", .{uptime.time()}).log();
 }
 
-test {
-    std.testing.refAllDecls(@This());
+comptime {
+    if (builtin.is_test) {
+        std.testing.refAllDeclsRecursive(@This());
+    }
 }

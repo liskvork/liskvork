@@ -155,7 +155,3 @@ pub fn launch_server(conf: *const config.Config) !void {
         logz.info().ctx("Closing...").log();
     }
 }
-
-test {
-    std.testing.refAllDecls(@This());
-}

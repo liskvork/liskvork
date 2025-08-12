@@ -199,7 +199,3 @@ pub fn deinit_config(t: type, conf: *const t) void {
         }
     }
 }
-
-test {
-    std.testing.refAllDecls(@This());
-}
