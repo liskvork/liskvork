@@ -21,10 +21,10 @@ jobs:
           version: 0.14.0
       - run: zig build -Doptimize=${{matrix.build_type}} -Dbuild_all --summary all
       - name: Artifact export
-        if: ${{ runner.os == 'Linux' }}
+        if: ${{runner.os == 'Linux'}}
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{matrix.build_type}}-${{github.head_ref}}-${{github.sha}}
+          name: artifacts-${{matrix.build_type}}-${{github.head_ref != '' && github.head_ref || github.ref_name}}-${{github.sha}}
           path: zig-out/bin/*
           if-no-files-found: error
           retention-days: 7
