@@ -289,12 +289,19 @@ pub const Client = struct {
         return try self.get_pos(ctx);
     }
 
-    pub fn stop_child(self: *Self) !void {
-        self.send_end() catch {}; // Evil af, but aight
-
-        const seconds_to_wait_after_end = 1;
-        std.time.sleep(seconds_to_wait_after_end * std.time.ns_per_s);
+    fn stop_child_inner(self: *Self, grace_time: u64) !void {
+        // FIXME: I honestly don't like the naming of this function
+        if (grace_time != 0) {
+            try self.send_end();
+            std.time.sleep(grace_time * std.time.ns_per_ms);
+        }
         _ = try self.proc.kill(); // This won't kill the process if it is already gone
+    }
+
+    pub fn stop_child(self: *Self, grace_time: u64) void {
+        self.stop_child_inner(grace_time) catch |e| {
+            logz.err().ctx("Could not end brain properly").int("player", self.p_num).err(e).log();
+        };
     }
 
     pub fn deinit(self: *const Self) void {

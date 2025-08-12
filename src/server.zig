@@ -98,9 +98,9 @@ pub fn launch_server(conf: *const config.Config) !void {
     var player2 = try Client.init(conf.game_player2, conf, 2);
     defer player2.deinit();
     try player1.start_process(&ctx);
-    defer player1.stop_child() catch @panic("How?");
+    defer player1.stop_child(conf.other_end_grace_time);
     try player2.start_process(&ctx);
-    defer player2.stop_child() catch @panic("How?");
+    defer player2.stop_child(conf.other_end_grace_time);
 
     var num_move: u16 = 1;
 
