@@ -6,6 +6,10 @@ Main repository URL: <https://github.com/liskvork/liskvork>
 
 [![CI](https://github.com/liskvork/liskvork/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/liskvork/liskvork/actions/workflows/CI.yml)
 
+## Contribution
+
+Please take a look at the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+
 ## License
 
 liskvork is licensed under the
