@@ -3,7 +3,6 @@ Dockerfile
 .gitignore
 .git/
 **/*.md
-.github
 LICENSE
 flake.*
 README.md

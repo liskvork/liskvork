@@ -2,13 +2,15 @@
 
 Modern multi-platform gomoku game server.
 
-Main repository URL: <https://github.com/liskvork/liskvork>
+Main repository URL: <https://git.sr.ht/~emneo/liskvork>
 
-[![CI](https://github.com/liskvork/liskvork/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/liskvork/liskvork/actions/workflows/CI.yml)
+<!-- [![CI](https://github.com/liskvork/liskvork/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/liskvork/liskvork/actions/workflows/CI.yml) -->
 
 ## Contribution
 
-Please take a look at the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+Please take a look at the [CONTRIBUTING.md](CONTRIBUTING.md) file, then consider
+sending a patch on the
+[development mailing list](https://lists.sr.ht/~emneo/liskvork-devel).
 
 ## License
 
@@ -35,11 +37,14 @@ or later.
 
 ## Reporting bugs/Submitting patches
 
-You can see open tickets and report bugs over
-[here](https://github.com/liskvork/liskvork/issues).
+You can see open tickets bugs over
+[here](https://todo.sr.ht/~emneo/liskvork).
 
-You can submit patches/PRs over
-[here](https://github.com/liskvork/liskvork/pulls).
+You can submit patches over
+[here](https://lists.sr.ht/~emneo/liskvork-devel).
+
+You can talk/discuss about the project, and ask questions about it over
+[here](https://lists.sr.ht/~emneo/liskvork-discuss).
 
 ## Building from source
 
@@ -63,9 +68,11 @@ zig build -Doptimize=ReleaseSafe
 
 ## Installing
 
-Get the binary from
+<!-- Get the binary from
 [Github release tab](https://github.com/liskvork/liskvork/releases) and then
-just launch it.
+just launch it. -->
+
+Currently no binaries are available. TBD.
 
 ## Launching liskvork
 
@@ -83,23 +90,14 @@ just launch it.
 docker run -v $(pwd):/data/:Z liskvork
 ```
 
-```sh
-# Or pulled from the repos
-docker run -v $(pwd):/data/:Z ghcr.io/liskvork/liskvork:latest
-```
-
 ### Nix
 
 ```sh
 nix --extra-experimental-features "nix-command flakes" \
-  run github:liskvork/liskvork
+  run sourcehut:~emneo/liskvork
 ```
 
 ## Configuration
 
 Look at the default `config.ini` that's created when launching for the first
 time everything (should) be documented properly to configure it.
-
-## Misc
-
-![Alt](https://repobeats.axiom.co/api/embed/c5bcdf9020dfd765f02b6606414c7b7f3e54cb9e.svg "Repobeats analytics image")
