@@ -1,0 +1,15 @@
+image: alpine/edge
+secrets:
+    - 9e39cc3a-d8d8-49aa-b101-e5f436665931
+environment:
+    REPO: liskvork
+    GH_USER: liskvork
+tasks:
+    - check-source: |
+        if [ "$BUILD_SUBMITTER" != "git.sr.ht" ]; then \
+            complete-build; \
+        fi
+    - push-to-github: |
+        cd $REPO
+        git config --global credential.helper store
+        git push --mirror "https://github.com/${GH_USER}/${REPO}"
