@@ -1,39 +1,11 @@
 const std = @import("std");
 
-const targets = [_]std.Target.Query{
-    .{
-        .cpu_arch = .x86_64,
-        .os_tag = .linux,
-    },
-    .{
-        .cpu_arch = .aarch64,
-        .os_tag = .linux,
-    },
-    .{
-        .cpu_arch = .x86_64,
-        .os_tag = .macos,
-    },
-    .{
-        .cpu_arch = .aarch64,
-        .os_tag = .macos,
-    },
-    .{
-        .cpu_arch = .x86_64,
-        .os_tag = .windows,
-    },
-    .{
-        .cpu_arch = .aarch64,
-        .os_tag = .windows,
-    },
-};
-
 const default_version_string = "0.6.0-dev";
 
 const default_bin_name = "liskvork";
 
 const build_options = struct {
     version: []const u8,
-    build_all: bool,
     bin_name: []const u8,
     use_system_allocator: bool,
     llvm: bool,
@@ -56,51 +28,6 @@ fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.B
     bin.root_module.addImport("zul", zul_pkg.module("zul"));
     bin.root_module.addImport("gomoku_game", libgomoku_pkg.module("gomoku_game"));
     bin.root_module.addImport("gomoku_protocol", libgomoku_pkg.module("gomoku_protocol"));
-
-    if (opt.use_system_allocator)
-        bin.linkLibC();
-}
-
-fn configure_tests(b: *std.Build, opt: build_options, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) *std.Build.Step.Compile {
-    const unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
-        .test_runner = .{ .path = b.path("test_runner.zig"), .mode = .simple },
-        .use_llvm = opt.llvm,
-    });
-    add_options_to_bin(b, unit_tests, target, optimize, opt);
-    return unit_tests;
-}
-
-fn create_binary_name(opt: build_options, target: std.Build.ResolvedTarget, allocator: std.mem.Allocator) ![]const u8 {
-    return try std.fmt.allocPrint(
-        allocator,
-        "{s}-{s}-{s}",
-        .{
-            opt.bin_name,
-            opt.version,
-            try target.result.linuxTriple(allocator),
-        },
-    );
-}
-
-fn configure_binary(b: *std.Build, opt: build_options, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, allocator: std.mem.Allocator, simple_bin_name: bool) !*std.Build.Step.Compile {
-    const final_bin_name = if (simple_bin_name) opt.bin_name else try create_binary_name(
-        opt,
-        target,
-        allocator,
-    );
-    const bin = b.addExecutable(.{
-        .name = final_bin_name,
-        .target = target,
-        .optimize = optimize,
-        .root_source_file = b.path("src/main.zig"),
-        .use_llvm = opt.llvm,
-    });
-    add_options_to_bin(b, bin, target, optimize, opt);
-    b.installArtifact(bin);
-    return bin;
 }
 
 fn set_build_options(b: *std.Build) build_options {
@@ -110,11 +37,6 @@ fn set_build_options(b: *std.Build) build_options {
             "version",
             "application version string",
         ) orelse default_version_string,
-        .build_all = b.option(
-            bool,
-            "build_all",
-            "build on all platforms possible",
-        ) orelse false,
         .bin_name = b.option(
             []const u8,
             "bin_name",
@@ -134,53 +56,47 @@ fn set_build_options(b: *std.Build) build_options {
 }
 
 pub fn build(b: *std.Build) !void {
-    const native_target = b.standardTargetOptions(.{});
+    const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-
-    comptime {
-        if (@import("builtin").zig_version.order(.{ .major = 0, .minor = 14, .patch = 0 }) == .lt) {
-            @compileError("liskvork requires zig version >= 0.14.0");
-        }
-    }
-
-    const allocator = b.allocator;
 
     const opt = set_build_options(b);
 
-    if (opt.build_all) {
-        for (targets) |target|
-            _ = try configure_binary(
-                b,
-                opt,
-                std.Build.resolveTargetQuery(b, target),
-                optimize,
-                allocator,
-                false,
-            );
-    } else {
-        const binary = try configure_binary(
-            b,
-            opt,
-            native_target,
-            optimize,
-            allocator,
-            true,
-        );
+    const liskvork_mod = b.createModule(.{
+        .optimize = optimize,
+        .target = target,
+        .root_source_file = b.path("src/main.zig"),
+        .link_libc = opt.use_system_allocator,
+    });
 
-        const run_cmd = b.addRunArtifact(binary);
+    const liskvork_bin = b.addExecutable(.{
+        .root_module = liskvork_mod,
+        .use_llvm = opt.llvm,
+        .name = opt.bin_name,
+    });
+    add_options_to_bin(b, liskvork_bin, target, optimize, opt);
+    b.installArtifact(liskvork_bin);
 
-        run_cmd.step.dependOn(b.getInstallStep());
-        if (b.args) |args| {
-            run_cmd.addArgs(args);
-        }
+    const run_cmd = b.addRunArtifact(liskvork_bin);
 
-        const run_step = b.step("run", "Run liskvork");
-        run_step.dependOn(&run_cmd.step);
+    run_cmd.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
     }
+
+    const run_step = b.step("run", "Run liskvork");
+    run_step.dependOn(&run_cmd.step);
 
     const test_step = b.step("test", "Run unit tests");
 
-    const unit_tests = configure_tests(b, opt, native_target, optimize);
+    const unit_tests = b.addTest(.{
+        .root_module = liskvork_mod,
+        .use_llvm = opt.llvm,
+        .test_runner = .{
+            .path = b.path("test_runner.zig"),
+            .mode = .simple,
+        },
+    });
+    add_options_to_bin(b, unit_tests, target, optimize, opt);
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
     run_unit_tests.has_side_effects = true;

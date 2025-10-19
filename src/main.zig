@@ -44,7 +44,7 @@ pub fn main() !void {
     const close_time = std.time.milliTimestamp();
     const uptime = try zul.DateTime.fromUnix(close_time - start_time, .milliseconds);
     // TODO: Show days of uptime too (Not sure this is needed though)
-    logz.info().ctx("Closing liskvork").fmt("uptime", "{}", .{uptime.time()}).log();
+    logz.info().ctx("Closing liskvork").fmt("uptime", "{f}", .{uptime.time()}).log();
 }
 
 comptime {

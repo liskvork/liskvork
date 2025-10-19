@@ -50,7 +50,7 @@ pub const Client = struct {
             .filepath = try utils.allocator.dupe(u8, filepath),
             .match_time_remaining = conf.game_timeout_match,
             .turn_time = conf.game_timeout_turn,
-            .read_buf = std.ArrayList(u8).init(utils.allocator),
+            .read_buf = std.ArrayList(u8){},
             .p_num = p_num,
         };
     }
@@ -157,7 +157,7 @@ pub const Client = struct {
                 return line;
             }
             const nb_read = try utils.read_with_timeout(self.proc.stdout.?, &tmp_rd_buf, if (timeout != -1) @divTrunc(left_timeout, std.time.us_per_ms) else -1);
-            try self.read_buf.appendSlice(tmp_rd_buf[0..nb_read]);
+            try self.read_buf.appendSlice(utils.allocator, tmp_rd_buf[0..nb_read]);
             const current_time = std.time.microTimestamp();
             left_timeout = @intCast(@max(0, timeout - (start_time - current_time)));
         }
@@ -274,7 +274,7 @@ pub const Client = struct {
         // FIXME: I honestly don't like the naming of this function
         if (grace_time != 0) {
             try self.send_end();
-            std.time.sleep(grace_time * std.time.ns_per_ms);
+            std.Thread.sleep(grace_time * std.time.ns_per_ms);
         }
         _ = try self.proc.kill(); // This won't kill the process if it is already gone
     }
@@ -285,13 +285,13 @@ pub const Client = struct {
         };
     }
 
-    pub fn deinit(self: *const Self) void {
+    pub fn deinit(self: *Self) void {
         if (self.initialized) {
             for (self.infos.items) |i|
                 i.deinit(utils.allocator);
-            self.infos.deinit();
+            self.infos.deinit(utils.allocator);
         }
         utils.allocator.free(self.filepath);
-        self.read_buf.deinit();
+        self.read_buf.deinit(utils.allocator);
     }
 };

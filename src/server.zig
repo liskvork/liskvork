@@ -85,7 +85,8 @@ pub fn launch_server(conf: *const config.Config) !void {
     var ctx = try Context.init(conf, utils.allocator);
     defer ctx.deinit();
 
-    const stdin = std.io.getStdIn().reader();
+    var read_buffer: [1024]u8 = undefined;
+    var stdin = std.fs.File.stdin().reader(&read_buffer);
 
     const board_log_file = try std.fs.cwd().createFile(
         conf.log_board_file,
@@ -107,7 +108,7 @@ pub fn launch_server(conf: *const config.Config) !void {
     if (!ctx.conf.other_auto_start) {
         logz.warn().ctx("auto_start is turned off! Press enter to start...").log();
         var buf: [10]u8 = undefined; // 10 is a magic number, doesn't matter
-        _ = try stdin.readUntilDelimiterOrEof(&buf, '\n');
+        _ = try stdin.interface.adaptToOldInterface().readUntilDelimiterOrEof(&buf, '\n');
         logz.info().ctx("Starting...").log();
     }
 
@@ -151,7 +152,7 @@ pub fn launch_server(conf: *const config.Config) !void {
     if (!ctx.conf.other_auto_close) {
         logz.warn().ctx("auto_close is turned off! Press enter to close...").log();
         var buf: [10]u8 = undefined; // 10 is a magic number, doesn't matter
-        _ = try stdin.readUntilDelimiterOrEof(&buf, '\n');
+        _ = try stdin.interface.adaptToOldInterface().readUntilDelimiterOrEof(&buf, '\n');
         logz.info().ctx("Closing...").log();
     }
 }

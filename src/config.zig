@@ -41,13 +41,13 @@ fn make_opt_struct(comptime in: type) type {
             .type = fieldType,
             .default_value_ptr = &@as(fieldType, null),
             .is_comptime = false,
-            .alignment = 0,
+            .alignment = @alignOf(fieldType),
         };
     }
     return @Type(.{
         .@"struct" = .{
             .layout = .auto,
-            .fields = fields[0..],
+            .fields = &fields,
             .decls = &[_]std.builtin.Type.Declaration{},
             .is_tuple = false,
         },
@@ -160,7 +160,9 @@ pub fn parse(filepath: []const u8) !Config {
     // That currently does read calls of size 1 for the whole parsing
     // Not really good but for now it is good
     // TODO: Patch this
-    var parser = ini.parse(utils.allocator, file.reader(), ";#");
+    var read_buffer: [2048]u8 = undefined;
+    var file_reader = file.reader(&read_buffer);
+    var parser = ini.parse(utils.allocator, &file_reader.interface, ";#");
     defer parser.deinit();
 
     var current_section: ?[]const u8 = null;
@@ -168,11 +170,11 @@ pub fn parse(filepath: []const u8) !Config {
         if (current_section) |sec|
             utils.allocator.free(sec);
     }
-    var fields = std.ArrayList(ini_field).init(utils.allocator);
+    var fields = std.ArrayList(ini_field){};
     defer {
         for (fields.items) |f|
             f.deinit();
-        fields.deinit();
+        fields.deinit(utils.allocator);
     }
     var tmp: tmp_config = .{};
     while (try parser.next()) |record| {
@@ -182,7 +184,7 @@ pub fn parse(filepath: []const u8) !Config {
                     utils.allocator.free(sec);
                 current_section = try utils.allocator.dupe(u8, heading);
             },
-            .property => |kv| try fields.append(try ini_field.init(current_section, kv, utils.allocator)),
+            .property => |kv| try fields.append(utils.allocator, try ini_field.init(current_section, kv, utils.allocator)),
             .enumeration => |_| @panic("No support for enumerations"),
         }
     }
