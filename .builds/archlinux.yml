@@ -1,0 +1,10 @@
+image: archlinux
+packages:
+    - zig
+tasks:
+    - build: |
+        cd liskvork
+        zig build --summary all
+    - test: |
+        cd liskvork
+        zig build test --summary all
