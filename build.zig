@@ -8,26 +8,16 @@ const build_options = struct {
     version: []const u8,
     bin_name: []const u8,
     use_system_allocator: bool,
-    llvm: bool,
+    llvm: ?bool,
 };
 
-fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, opt: build_options) void {
-    const ini_pkg = b.dependency("ini", .{ .target = target, .optimize = optimize });
-    const logz_pkg = b.dependency("logz", .{ .target = target, .optimize = optimize });
-    const zul_pkg = b.dependency("zul", .{ .target = target, .optimize = optimize });
-    const libgomoku_pkg = b.dependency("libgomoku", .{ .target = target, .optimize = optimize, .llvm = opt.llvm });
-
+fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, opt: build_options) void {
     const options = b.addOptions();
     options.addOption([]const u8, "version", opt.version);
     options.addOption([]const u8, "bin_name", opt.bin_name);
     options.addOption(bool, "use_system_allocator", opt.use_system_allocator);
 
     bin.root_module.addOptions("build_config", options);
-    bin.root_module.addImport("ini", ini_pkg.module("ini"));
-    bin.root_module.addImport("logz", logz_pkg.module("logz"));
-    bin.root_module.addImport("zul", zul_pkg.module("zul"));
-    bin.root_module.addImport("gomoku_game", libgomoku_pkg.module("gomoku_game"));
-    bin.root_module.addImport("gomoku_protocol", libgomoku_pkg.module("gomoku_protocol"));
 }
 
 fn set_build_options(b: *std.Build) build_options {
@@ -51,7 +41,7 @@ fn set_build_options(b: *std.Build) build_options {
             bool,
             "llvm",
             "Use LLVM backend",
-        ) orelse true,
+        ),
     };
 }
 
@@ -61,11 +51,24 @@ pub fn build(b: *std.Build) !void {
 
     const opt = set_build_options(b);
 
+    const pkg_args = .{ .target = target, .optimize = optimize };
+    const ini_pkg = b.dependency("ini", pkg_args);
+    const logz_pkg = b.dependency("logz", pkg_args);
+    const zul_pkg = b.dependency("zul", pkg_args);
+    const libgomoku_pkg = b.dependency("libgomoku", pkg_args);
+
     const liskvork_mod = b.createModule(.{
         .optimize = optimize,
         .target = target,
         .root_source_file = b.path("src/main.zig"),
         .link_libc = opt.use_system_allocator,
+        .imports = &.{
+            .{ .name = "ini", .module = ini_pkg.module("ini") },
+            .{ .name = "logz", .module = logz_pkg.module("logz") },
+            .{ .name = "zul", .module = zul_pkg.module("zul") },
+            .{ .name = "gomoku_game", .module = libgomoku_pkg.module("gomoku_game") },
+            .{ .name = "gomoku_protocol", .module = libgomoku_pkg.module("gomoku_protocol") },
+        },
     });
 
     const liskvork_bin = b.addExecutable(.{
@@ -73,7 +76,7 @@ pub fn build(b: *std.Build) !void {
         .use_llvm = opt.llvm,
         .name = opt.bin_name,
     });
-    add_options_to_bin(b, liskvork_bin, target, optimize, opt);
+    add_options_to_bin(b, liskvork_bin, opt);
     b.installArtifact(liskvork_bin);
 
     const run_cmd = b.addRunArtifact(liskvork_bin);
@@ -96,7 +99,7 @@ pub fn build(b: *std.Build) !void {
             .mode = .simple,
         },
     });
-    add_options_to_bin(b, unit_tests, target, optimize, opt);
+    add_options_to_bin(b, unit_tests, opt);
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
     run_unit_tests.has_side_effects = true;
