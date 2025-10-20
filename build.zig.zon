@@ -1,7 +1,7 @@
 .{
     .name = .liskvork,
     .fingerprint = 0x55aa8a61d457c3b1,
-    .version = "0.5.1-dev",
+    .version = "0.6.0-dev",
     .minimum_zig_version = "0.15.2",
 
     .dependencies = .{
