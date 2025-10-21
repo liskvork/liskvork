@@ -4,7 +4,7 @@ Modern multi-platform gomoku game server.
 
 Main repository URL: <https://git.sr.ht/~emneo/liskvork>
 
-<!-- [![CI](https://github.com/liskvork/liskvork/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/liskvork/liskvork/actions/workflows/CI.yml) -->
+[![builds.sr.ht status](https://builds.sr.ht/~emneo/liskvork.svg)](https://builds.sr.ht/~emneo/liskvork)
 
 ## Contribution
 
