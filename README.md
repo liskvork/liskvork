@@ -20,15 +20,14 @@ or later.
 
 ## Support
 
-|              | x86-64 | aarch64 |
-|--------------|--------|---------|
-| Linux (GNU)  | 🟢     | 🟡      |
-| Linux (MUSL) | 🟢     | 🟡      |
-| Windows      | 🟡     | 🟡      |
-| MacOS        | 🟡     | 🟡      |
-| OpenBSD      | 🔴     | 🔴      |
-| FreeBSD      | 🔴     | 🔴      |
-| TempleOS     | 🔴     | 🔴      |
+|              | x86-64 | aarch64 | riscv64 |
+|--------------|--------|---------|---------|
+| Linux (GNU)  | 🟢     | 🟡      | 🟡      |
+| Linux (MUSL) | 🟢     | 🔴      | 🔴      |
+| Windows      | 🟡     | 🟡      | 🔴      |
+| MacOS        | 🟡     | 🟡      | 🔴      |
+| FreeBSD      | 🟡     | 🟡      | 🟡      |
+| OpenBSD      | 🔴     | 🔴      | 🔴      |
 
 🟢 - Supported and actively tested
 
