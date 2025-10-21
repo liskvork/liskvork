@@ -1,6 +1,6 @@
 image: openbsd/7.7
 packages:
-    - zig
+    - lang/zig
 tasks:
     - build: |
         cd liskvork
