@@ -6,38 +6,38 @@
 }:
 linkFarm "zig-packages" [
   {
-    name = "N-V-__8AAHOzAQBh8wB371GN1DXTl1mKs8Rdqj0sJea0U4P7";
+    name = "ini-0.1.0-YCQ9Ys0pAABixEvvQvhVXAdqRE3wrZk_wiL9TPNHhB8d";
     path = fetchzip {
-      url = "https://github.com/karlseguin/metrics.zig/archive/cf2797bcb3aea7e5cdaf4de39c5550c70796e7b1.tar.gz";
-      hash = "sha256-9wb9pU3jTXfZYaQzPuW0IrsftJTyRCJfG9oks6RpKy4=";
+      url = "https://github.com/emneo-dev/ini/archive/a6a5b4425d504f934e5a7ea62808d8d21c585b51.tar.gz";
+      hash = "sha256-4o4tFV05IV/uSQWDtwqaeStY46ORmze//2IlBQ5MhnY=";
     };
   }
   {
-    name = "ini-0.1.0-YCQ9YsQlAACRplKkaUUXQLWVh2P1VULCsaS4JHhmkJRe";
+    name = "libgomoku-0.2.0-VjnJyEyqAAA4Efzu3ngIbgHRRCfn8JkxnVsPc83KjFNs";
     path = fetchzip {
-      url = "https://github.com/ziglibs/ini/archive/30afc2fc875ff817af0ffe490481f6f8aa3b5cd4.tar.gz";
-      hash = "sha256-ynzakoLlCH1mKAkMnBa1PG2VMP70dReESVEtZAN6md0=";
+      url = "https://git.sr.ht/~emneo/libgomoku/archive/0.2.0.tar.gz";
+      hash = "sha256-zXr8L4cOxAz1fct0Q6hUa9Q968/Affc+gH49bsEODq8=";
     };
   }
   {
-    name = "libgomoku-0.1.1-VjnJyISKAABgN8bDUfBnX3NpgPudQP69Y2bYvntzDat7";
+    name = "logz-0.0.0-O9YWXrJKAgBA98lbuTKXADVOR1ULzRGLMzrj1dkduNAF";
     path = fetchzip {
-      url = "https://github.com/liskvork/libgomoku/archive/refs/tags/0.1.1.tar.gz";
-      hash = "sha256-N/syc9JpDwmH7mTJVSC00CkGDEB8n4Y0WNRdFOztOKk=";
+      url = "https://github.com/karlseguin/log.zig/archive/cc5268932e84da9dad09fd48b544d67212889c02.tar.gz";
+      hash = "sha256-ivI9YUdz2gNoGjNkRxtsI9Z7ciF3up0LwXiLWakhi18=";
     };
   }
   {
-    name = "logz-0.0.0-O9YWXlhHAgD8srw1WqQ2SPde3T674hoD3mGFPCVCWFPS";
+    name = "metrics-0.0.0-W7G4eP2_AQBKsaql3dhLJ-pkf-RdP-zV3vflJy4N34jC";
     path = fetchzip {
-      url = "https://github.com/karlseguin/log.zig/archive/db6ec9818cc6dabf853c3271d8fecb7af5d4755c.tar.gz";
-      hash = "sha256-rxRqUmpb2sxikEKWZrYlqmsRfvcsojt1FeW0dQXEcpU=";
+      url = "https://github.com/karlseguin/metrics.zig/archive/13d8706e1ae921a8cc0d2f88283c1b5412c73e2f.tar.gz";
+      hash = "sha256-iu19RwA2pIhT+tSwaaLT+9XPNR8Ucaq88XfH9lkeyMk=";
     };
   }
   {
-    name = "zul-0.0.0-1oDot0BCBwA9cUo5OOrPs5NGmvoM7sk1ztfbdfL7mh4P";
+    name = "zul-0.0.0-1oDot9yRBwDA_ovd6GC1M_ViW3LarywMaGrH6vcuEjqv";
     path = fetchzip {
-      url = "https://github.com/karlseguin/zul/archive/d9142c73aedc5698beba58b3fbf2bcfe69864778.tar.gz";
-      hash = "sha256-kQ1nOdSw0sNAOSMYgEBgNLE4XFGe4h9hGWOYMFKrzqA=";
+      url = "https://github.com/karlseguin/zul/archive/e770047f208cf4538fcd9fc64550c84fd5492fc4.tar.gz";
+      hash = "sha256-8Mi5Zx8oKH0IGYqR3Bbw5szl2CZUmhMvS6bMA1852KY=";
     };
   }
 ]
