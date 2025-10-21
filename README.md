@@ -26,6 +26,7 @@ or later.
 | Windows | 🟡     | 🟡      | 🔴      |
 | MacOS   | 🟡     | 🟡      | 🔴      |
 | FreeBSD | 🟡     | 🟡      | 🟡      |
+| NetBSD  | 🟡     | 🟡      | 🔴      |
 | OpenBSD | 🔴     | 🔴      | 🔴      |
 
 🟢 - Supported and actively tested

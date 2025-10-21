@@ -15,6 +15,7 @@ const target_oss = [_]std.Target.Os.Tag{
     .windows,
     .macos,
     .freebsd,
+    .netbsd,
 };
 
 const build_options = struct {
@@ -82,16 +83,16 @@ fn create_binary_name(opt: build_options, target: std.Build.ResolvedTarget, allo
 fn supports(comptime os: std.Target.Os.Tag, arch: std.Target.Cpu.Arch) bool {
     return switch (arch) {
         .aarch64 => switch (os) {
-            .windows, .linux, .freebsd, .macos => true,
+            .windows, .linux, .freebsd, .macos, .netbsd => true,
             else => @panic("No idea if " ++ @tagName(os) ++ " supports " ++ @tagName(arch)),
         },
         .x86_64 => switch (os) {
-            .windows, .linux, .freebsd, .macos => true,
+            .windows, .linux, .freebsd, .macos, .netbsd => true,
             else => @panic("No idea if " ++ @tagName(os) ++ " supports " ++ @tagName(arch)),
         },
         .riscv64 => switch (os) {
             .linux, .freebsd => true,
-            .windows, .macos => false,
+            .windows, .macos, .netbsd => false,
             else => @panic("No idea if " ++ @tagName(os) ++ " supports " ++ @tagName(arch)),
         },
         else => @panic("No idea if " ++ @tagName(os) ++ " supports " ++ @tagName(arch)),
