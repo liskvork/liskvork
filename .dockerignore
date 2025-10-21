@@ -1,11 +1,4 @@
-ais
-Dockerfile
-.gitignore
-.git/
-**/*.md
-LICENSE
-flake.*
-README.md
-zig-out
-.zig-cache
-.dockerignore
+*
+!src
+!build.zig
+!build.zig.zon
