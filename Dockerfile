@@ -2,7 +2,7 @@ FROM alpine:edge AS builder
 
 ARG BUILD_VERSION=0.0.0
 
-RUN apk add --no-cache "zig=~0.14"
+RUN apk add --no-cache "zig=~0.15"
 
 WORKDIR /work
 
