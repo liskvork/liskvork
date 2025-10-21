@@ -28,6 +28,7 @@ or later.
 | MacOS        | 🟡     | 🟡      |
 | OpenBSD      | 🔴     | 🔴      |
 | FreeBSD      | 🔴     | 🔴      |
+| TempleOS     | 🔴     | 🔴      |
 
 🟢 - Supported and actively tested
 
