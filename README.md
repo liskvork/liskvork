@@ -58,7 +58,7 @@ docker build . --build-arg BUILD_VERSION=0.0.0-dev -t liskvork
 
 #### Dependencies
 
-- zig 0.14.0 (May work with newer versions but has not been tested)
+- zig 0.15.0 (May work with newer versions but has not been tested)
 
 #### Step
 
@@ -68,11 +68,8 @@ zig build -Doptimize=ReleaseSafe
 
 ## Installing
 
-<!-- Get the binary from
-[Github release tab](https://github.com/liskvork/liskvork/releases) and then
-just launch it. -->
-
-Currently no binaries are available. TBD.
+Grab a binary from [the release server](https://releases.liskvork.org) and then
+just launch it.
 
 ## Launching liskvork
 
