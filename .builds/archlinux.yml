@@ -15,9 +15,9 @@ tasks:
           cd liskvork
           time zig build test --summary all
     - export: |
-          cd liskvork
-          tar czvf liskvork-dev-builds.tar.gz zig-out/bin/*
-          tar cJvf liskvork-dev-builds.tar.xz zig-out/bin/*
+          cd liskvork/zig-out/bin
+          tar czvf ../../liskvork-dev-builds.tar.gz *
+          tar cJvf ../../liskvork-dev-builds.tar.xz *
 artifacts:
     - liskvork/liskvork-dev-builds.tar.gz
     - liskvork/liskvork-dev-builds.tar.xz
