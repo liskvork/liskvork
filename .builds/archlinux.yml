@@ -4,13 +4,13 @@ packages:
 tasks:
     - build: |
           cd liskvork
-          zig build --summary all
+          time zig build --summary all
     - build_all_debug: |
           cd liskvork
-          zig build -Dbuild_all -Doptimize=Debug --summary all
+          time zig build -Dbuild_all -Doptimize=Debug --summary all
     - build_all_release: |
           cd liskvork
-          zig build -Dbuild_all -Doptimize=ReleaseSafe --summary all
+          time zig build -Dbuild_all -Doptimize=ReleaseSafe --summary all
     - test: |
           cd liskvork
-          zig build test --summary all
+          time zig build test --summary all
