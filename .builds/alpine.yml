@@ -3,8 +3,11 @@ packages:
     - zig
 tasks:
     - build: |
-        cd liskvork
-        zig build --summary all
+          cd liskvork
+          zig build --summary all
+    - build_all: |
+          cd liskvork
+          zig build -Dbuild_all --summary all
     - test: |
-        cd liskvork
-        zig build test --summary all
+          cd liskvork
+          zig build test --summary all
