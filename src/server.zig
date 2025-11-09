@@ -94,9 +94,9 @@ pub fn launch_server(conf: *const config.Config) !void {
     );
     defer board_log_file.close();
 
-    var player1 = try Client.init(conf.game_player1, conf, 1);
+    var player1 = try Client.init(conf.player1_path, conf, 1);
     defer player1.deinit();
-    var player2 = try Client.init(conf.game_player2, conf, 2);
+    var player2 = try Client.init(conf.player2_path, conf, 2);
     defer player2.deinit();
     try player1.start_process(&ctx);
     defer player1.stop_child(conf.other_end_grace_time);
@@ -113,13 +113,13 @@ pub fn launch_server(conf: *const config.Config) !void {
     }
 
     var start_time = std.time.microTimestamp();
-    var pos1 = player1.begin(&ctx) catch |e| return handle_player_error(e, 1);
+    var pos1 = player1.begin() catch |e| return handle_player_error(e, 1);
     var end_time = std.time.microTimestamp();
     _ = ctx.board.place(pos1, .Player1) catch |e| return handle_player_error(e, 1); // Is never a winning move
     try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
     try while (true) {
         start_time = std.time.microTimestamp();
-        const pos2 = player2.turn(&ctx, pos1) catch |e| break handle_player_error(e, 2);
+        const pos2 = player2.turn(pos1) catch |e| break handle_player_error(e, 2);
         end_time = std.time.microTimestamp();
         const pos2_win = ctx.board.place(pos2, .Player2) catch |e| break handle_player_error(e, 1);
         num_move += 1;
@@ -134,7 +134,7 @@ pub fn launch_server(conf: *const config.Config) !void {
         }
 
         start_time = std.time.microTimestamp();
-        pos1 = player1.turn(&ctx, pos2) catch |e| break handle_player_error(e, 1);
+        pos1 = player1.turn(pos2) catch |e| break handle_player_error(e, 1);
         end_time = std.time.microTimestamp();
         const pos1_win = ctx.board.place(pos1, .Player1) catch |e| break handle_player_error(e, 1);
         num_move += 1;

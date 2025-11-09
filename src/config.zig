@@ -7,11 +7,15 @@ const utils = @import("utils.zig");
 // Add to this structure to automatically add to the config
 pub const Config = struct {
     game_board_size: u32,
-    game_timeout_match: u64,
-    game_timeout_turn: u64,
     game_max_memory: u64,
-    game_player1: []const u8,
-    game_player2: []const u8,
+
+    player1_path: []const u8,
+    player1_timeout_match: u64,
+    player1_timeout_turn: u64,
+
+    player2_path: []const u8,
+    player2_timeout_match: u64,
+    player2_timeout_turn: u64,
 
     log_level: logz.Level,
     log_board_file: []const u8,

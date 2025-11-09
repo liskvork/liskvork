@@ -48,8 +48,8 @@ pub const Client = struct {
     pub fn init(filepath: []const u8, conf: *const config.Config, p_num: u2) !Client {
         return .{
             .filepath = try utils.allocator.dupe(u8, filepath),
-            .match_time_remaining = conf.game_timeout_match,
-            .turn_time = conf.game_timeout_turn,
+            .match_time_remaining = if (p_num == 1) conf.player1_timeout_match else conf.player2_timeout_match,
+            .turn_time = if (p_num == 1) conf.player1_timeout_turn else conf.player2_timeout_turn,
             .read_buf = std.ArrayList(u8){},
             .p_num = p_num,
         };
@@ -200,8 +200,8 @@ pub const Client = struct {
     }
 
     fn send_all_infos(self: *Self, ctx: *const server.Context) !void {
-        try self.send_info(.{ .timeout_turn = ctx.conf.game_timeout_turn });
-        try self.send_info(.{ .timeout_match = ctx.conf.game_timeout_match });
+        try self.send_info(.{ .timeout_turn = self.turn_time });
+        try self.send_info(.{ .timeout_match = self.match_time_remaining });
         try self.send_info(.{ .max_memory = ctx.conf.game_max_memory });
     }
 
@@ -236,13 +236,13 @@ pub const Client = struct {
         }
     }
 
-    fn get_pos(self: *Self, ctx: *const server.Context) !game.Position {
+    fn get_pos(self: *Self) !game.Position {
         const start_time = std.time.microTimestamp();
         while (true) {
             const current_time = std.time.microTimestamp();
-            const remaining_time: i32 = @max(0, @as(i32, @intCast(ctx.conf.game_timeout_turn)) - @as(i32, @intCast(@divTrunc(current_time - start_time, 1000))));
+            const remaining_time: i32 = @max(0, @as(i32, @intCast(self.turn_time)) - @as(i32, @intCast(@divTrunc(current_time - start_time, 1000))));
 
-            const cmd = try self.get_command_with_timeout(if (ctx.conf.game_timeout_turn != 0) remaining_time else -1);
+            const cmd = try self.get_command_with_timeout(if (self.turn_time != 0) remaining_time else -1);
             if (cmd == null)
                 return error.BadCommand;
             defer cmd.?.deinit();
@@ -260,14 +260,14 @@ pub const Client = struct {
         }
     }
 
-    pub fn begin(self: *Self, ctx: *const server.Context) !game.Position {
+    pub fn begin(self: *Self) !game.Position {
         try self.send_begin();
-        return try self.get_pos(ctx);
+        return try self.get_pos();
     }
 
-    pub fn turn(self: *Self, ctx: *const server.Context, pos: game.Position) !game.Position {
+    pub fn turn(self: *Self, pos: game.Position) !game.Position {
         try self.send_turn(pos);
-        return try self.get_pos(ctx);
+        return try self.get_pos();
     }
 
     fn stop_child_inner(self: *Self, grace_time: u64) !void {
