@@ -8,7 +8,7 @@ linkFarm "zig-packages" [
   {
     name = "ini-0.1.0-YCQ9Ys0pAABixEvvQvhVXAdqRE3wrZk_wiL9TPNHhB8d";
     path = fetchzip {
-      url = "https://github.com/emneo-dev/ini/archive/a6a5b4425d504f934e5a7ea62808d8d21c585b51.tar.gz";
+      url = "https://github.com/ziglibs/ini/archive/918f16d0dcf893d0c1cdffe204faa08bb3584e04.tar.gz";
       hash = "sha256-4o4tFV05IV/uSQWDtwqaeStY46ORmze//2IlBQ5MhnY=";
     };
   }
