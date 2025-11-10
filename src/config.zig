@@ -143,21 +143,25 @@ fn map_value(kv: ini_field, conf: *tmp_config, allocator: std.mem.Allocator) !vo
     return ConfigError.UnknownKey;
 }
 
+pub fn create_default(filepath: []const u8) !void {
+    logz.warn()
+        .ctx("Creating config file...")
+        .string("filepath", filepath)
+        .log();
+    const tmp = try std.fs.cwd().createFile(
+        filepath,
+        .{},
+    );
+    defer tmp.close();
+    _ = try tmp.writeAll(default_config);
+    logz.warn()
+        .ctx("Config file created! Make sure to update it properly before running liskvork.")
+        .string("filepath", "config.ini")
+        .log();
+}
+
 pub fn parse(filepath: []const u8) !Config {
-    std.fs.cwd().access(filepath, .{}) catch |e| {
-        switch (e) {
-            error.FileNotFound => {
-                logz.warn().ctx("Config file not found! Creating...").string("filepath", filepath).log();
-                const tmp = try std.fs.cwd().createFile(
-                    filepath,
-                    .{},
-                );
-                defer tmp.close();
-                _ = try tmp.writeAll(default_config);
-            },
-            else => return e,
-        }
-    };
+    try std.fs.cwd().access(filepath, .{});
     const file = try std.fs.cwd().openFile(filepath, .{});
     defer file.close();
 

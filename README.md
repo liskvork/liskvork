@@ -96,5 +96,7 @@ nix --extra-experimental-features "nix-command flakes" \
 
 ## Configuration
 
-Look at the default `config.ini` that's created when launching for the first
-time everything (should) be documented properly to configure it.
+Look at the default `config.ini` that's created when launching with the `--init-config` flag. 
+Everything (should) be documented properly to configure it.
+
+If you wish to reset the configuration, just run liskvork with the `--init-config` flag once again.
