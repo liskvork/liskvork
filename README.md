@@ -100,3 +100,7 @@ Look at the default `config.ini` that's created when launching with the `--init-
 Everything (should) be documented properly to configure it.
 
 If you wish to reset the configuration, just run liskvork with the `--init-config` flag once again.
+
+Some configuration values can be overriden at runtime with flags. Please consult `liskvork --help` for more information.
+
+You can also use a different config file with the `-c` flag, followed with the path to the configuration file.

@@ -21,6 +21,10 @@
             .url = "https://git.sr.ht/~emneo/libgomoku/archive/0.2.0.tar.gz",
             .hash = "libgomoku-0.2.0-VjnJyEyqAAA4Efzu3ngIbgHRRCfn8JkxnVsPc83KjFNs",
         },
+        .clap = .{
+            .url = "https://github.com/Hejsil/zig-clap/archive/refs/tags/0.11.0.tar.gz",
+            .hash = "clap-0.11.0-oBajB-HnAQDPCKYzwF7rO3qDFwRcD39Q0DALlTSz5H7e",
+        },
     },
     .paths = .{
         "build.zig",

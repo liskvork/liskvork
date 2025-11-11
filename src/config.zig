@@ -3,6 +3,7 @@ const std = @import("std");
 const logz = @import("logz");
 const ini = @import("ini");
 const utils = @import("utils.zig");
+const args = @import("args.zig");
 
 // Add to this structure to automatically add to the config
 pub const Config = struct {
@@ -24,6 +25,15 @@ pub const Config = struct {
     other_auto_start: bool,
     other_auto_close: bool,
     other_end_grace_time: u64,
+
+    // Overrides config keys with parsed command line arguments.
+    pub fn override(self: *Config, arguments: args.Args) void {
+        inline for (comptime std.meta.fieldNames(args.Args)) |field| {
+            if (@hasField(Config, field) and @field(arguments, field) != null) {
+                @field(self, field) = @field(arguments, field).?;
+            }
+        }
+    }
 };
 
 pub const default_config = @embedFile("default_config.ini");

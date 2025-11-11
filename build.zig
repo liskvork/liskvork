@@ -110,6 +110,7 @@ pub fn build(b: *std.Build) !void {
     const logz_pkg = b.dependency("logz", pkg_args);
     const zul_pkg = b.dependency("zul", pkg_args);
     const libgomoku_pkg = b.dependency("libgomoku", pkg_args);
+    const zigclap_pkg = b.dependency("clap", pkg_args);
 
     if (opt.build_all) {
         // We want to build all targets, to check if all platforms build or to
@@ -132,6 +133,7 @@ pub fn build(b: *std.Build) !void {
                         .{ .name = "ini", .module = ini_pkg.module("ini") },
                         .{ .name = "logz", .module = logz_pkg.module("logz") },
                         .{ .name = "zul", .module = zul_pkg.module("zul") },
+                        .{ .name = "clap", .module = zigclap_pkg.module("clap") },
                         .{ .name = "gomoku_game", .module = libgomoku_pkg.module("gomoku_game") },
                         .{ .name = "gomoku_protocol", .module = libgomoku_pkg.module("gomoku_protocol") },
                     },
@@ -159,6 +161,7 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "ini", .module = ini_pkg.module("ini") },
             .{ .name = "logz", .module = logz_pkg.module("logz") },
             .{ .name = "zul", .module = zul_pkg.module("zul") },
+            .{ .name = "clap", .module = zigclap_pkg.module("clap") },
             .{ .name = "gomoku_game", .module = libgomoku_pkg.module("gomoku_game") },
             .{ .name = "gomoku_protocol", .module = libgomoku_pkg.module("gomoku_protocol") },
         },
