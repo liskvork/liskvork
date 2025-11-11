@@ -6,6 +6,13 @@
 }:
 linkFarm "zig-packages" [
   {
+    name = "clap-0.11.0-oBajB-HnAQDPCKYzwF7rO3qDFwRcD39Q0DALlTSz5H7e";
+    path = fetchzip {
+      url = "https://github.com/Hejsil/zig-clap/archive/refs/tags/0.11.0.tar.gz";
+      hash = "sha256-XytqwtoE0xaR43YustgK68sAQPVfC0Dt+uCs8UTfkbU=";
+    };
+  }
+  {
     name = "ini-0.1.0-YCQ9Ys0pAABixEvvQvhVXAdqRE3wrZk_wiL9TPNHhB8d";
     path = fetchzip {
       url = "https://github.com/ziglibs/ini/archive/918f16d0dcf893d0c1cdffe204faa08bb3584e04.tar.gz";
