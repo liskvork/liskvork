@@ -121,7 +121,7 @@ pub fn launch_server(conf: *const config.Config) !void {
         start_time = std.time.microTimestamp();
         const pos2 = player2.turn(pos1) catch |e| break handle_player_error(e, 2);
         end_time = std.time.microTimestamp();
-        const pos2_win = ctx.board.place(pos2, .Player2) catch |e| break handle_player_error(e, 1);
+        const pos2_win = ctx.board.place(pos2, .Player2) catch |e| break handle_player_error(e, 2);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos2, num_move, 2, end_time - start_time);
         if (pos2_win) {
