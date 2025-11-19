@@ -3,14 +3,16 @@ const clap = @import("clap");
 const utils = @import("utils.zig");
 
 const help =
-    \\-h, --help           Display this help message.
-    \\--init-config        Initialize config or reset to default (config.ini).
-    \\-c, --config <PATH>  Set the config path
-    \\--player1 <PATH>     Override the path to the player1 brain.
-    \\--player2 <PATH>     Override the path to the player2 brain.
-    \\-o, --output <OUT>   Set board output (defaults to config).
-    \\-s, --size <SIZE>    Set board size.
-    \\-m, --memory <MEM>   Set the maximum memory available for brains.
+    \\-h, --help                Display this help message.
+    \\--init-config             Initialize config or reset to default (config.ini).
+    \\-c, --config <PATH>       Set the config path
+    \\--player1 <PATH>          Override the path to the player1 brain.
+    \\--player2 <PATH>          Override the path to the player2 brain.
+    \\-o, --output <OUT>        Set board output (defaults to config).
+    \\-s, --size <SIZE>         Set board size.
+    \\-m, --memory <MEM>        Set the maximum memory available for brains.
+    \\-r, --replay-file <PATH>  Override the path to the replay output.
+    \\--no-replay               Disable replay file output.
 ;
 const params = clap.parseParamsComptime(help);
 
@@ -19,6 +21,7 @@ pub const Args = struct {
     player1_path: ?[]const u8,
     player2_path: ?[]const u8,
     log_board_file: ?[]const u8,
+    log_replay_file: ?[]const u8,
     game_board_size: ?u32,
     game_max_memory: ?u64,
 
@@ -26,6 +29,7 @@ pub const Args = struct {
     help_flag: bool,
     init_config: bool,
     config_path: []const u8,
+    no_replay: bool,
 };
 
 pub fn handle() !Args {
@@ -51,6 +55,8 @@ pub fn handle() !Args {
         .player1_path = res.args.player1,
         .player2_path = res.args.player2,
         .log_board_file = res.args.output,
+        .log_replay_file = res.args.@"replay-file",
+        .no_replay = res.args.@"no-replay" != 0,
         .game_board_size = res.args.size,
         .game_max_memory = res.args.memory,
     };

@@ -10,7 +10,7 @@ result
 
 # Created by liskvork at runtime
 config.ini
-board.log
+*.log
 
 # AIS used for testing
 ais

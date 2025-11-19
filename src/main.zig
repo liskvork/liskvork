@@ -54,6 +54,8 @@ pub fn main() !void {
     };
     defer config.deinit_config(config.Config, &conf);
     conf.override(args_data);
+    if (args_data.no_replay)
+        conf.log_replay_file_enabled = false;
 
     try logz.setup(utils.allocator, .{
         .level = conf.log_level,

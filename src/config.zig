@@ -21,6 +21,8 @@ pub const Config = struct {
     log_level: logz.Level,
     log_board_file: []const u8,
     log_board_color: bool,
+    log_replay_file: []const u8,
+    log_replay_file_enabled: bool,
 
     other_auto_start: bool,
     other_auto_close: bool,

@@ -44,6 +44,7 @@ pub const Client = struct {
     read_buf: std.ArrayList(u8),
     p_num: u2,
     initialized: bool = false,
+    name: []const u8 = undefined,
 
     pub fn init(filepath: []const u8, conf: *const config.Config, p_num: u2) !Client {
         return .{
@@ -121,9 +122,20 @@ pub const Client = struct {
         try self.send_all_infos(ctx);
 
         var l = logz.info().ctx("Finished initialization");
-        for (self.infos.items) |i|
+        defer l.log();
+        var found_name: bool = false;
+        for (self.infos.items) |i| {
+            if (std.mem.eql(u8, i.k, "name")) {
+                self.name = i.v;
+                found_name = true;
+            }
             l = l.string(i.k, i.v);
-        l.log();
+        }
+        if (!found_name) {
+            self.name = if (self.p_num == 1) "no_name_p1" else "no_name_p2";
+            logz.debug().ctx("Brain did not provide a name").stringSafe("default", self.name).log();
+            l = l.string("name", self.name);
+        }
         self.initialized = true;
     }
 

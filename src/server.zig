@@ -11,6 +11,7 @@ const config = @import("config.zig");
 const client = @import("client.zig");
 const Client = client.Client;
 const game = @import("gomoku_game");
+const Replay = @import("replay.zig");
 
 const WriteError = @import("std").posix.WriteError;
 
@@ -59,25 +60,34 @@ fn call_winning_player(num_player: u2) void {
     } else logz.info().ctx("Player 2 wins!").log();
 }
 
-fn handle_player_error(e: anyerror, num_player: u2) !void {
+fn handle_player_error(e: anyerror, num_player: u2, replay_handle: ?*Replay) !void {
     const winning_player: u2 = if (num_player == 1) 2 else 1;
+    const t = std.time.microTimestamp();
+    var event: []const u8 = undefined;
     switch (e) {
         utils.ReadWriteError.TimeoutError => {
             logz.err().ctx("Player could not answer in the given time").int("player", num_player).log();
+            event = if (num_player == 1) "PLAYER1_TIMEOUT" else "PLAYER2_TIMEOUT";
         },
         game.Error.OutOfBound => {
             logz.err().ctx("Player gave a move that's out of bounds").int("player", num_player).log();
+            event = if (num_player == 1) "PLAYER1_OUT_OF_BOUND" else "PLAYER2_OUT_OF_BOUND";
         },
         game.Error.AlreadyTaken => {
             logz.err().ctx("Player gave a position that's already in use").int("player", num_player).log();
+            event = if (num_player == 1) "PLAYER1_ALREADY_TAKEN" else "PLAYER2_ALREADY_TAKEN";
         },
         WriteError.BrokenPipe => {
             logz.err().ctx("Player has a broken pipe! Did your AI crash/close?").int("player", num_player).log();
+            event = if (num_player == 1) "PLAYER1_BROKEN_PIPE" else "PLAYER2_BROKEN_PIPE";
         },
         else => {
             logz.err().ctx("Unhandled error").int("player", num_player).stringSafe("errorName", @errorName(e)).log();
+            event = if (num_player == 1) "PLAYER1_UNHANDLED_ERROR" else "PLAYER2_UNHANDLED_ERROR";
         },
     }
+    if (replay_handle) |r|
+        try r.write_event(t, 0, event);
     call_winning_player(winning_player);
 }
 
@@ -108,6 +118,12 @@ pub fn launch_server(conf: *const config.Config) !void {
         return;
     };
     defer player2.stop_child(conf.other_end_grace_time);
+    var log_replay_file_handle: ?*Replay = null;
+
+    if (conf.log_replay_file_enabled) {
+        log_replay_file_handle = try Replay.init(std.fs.cwd(), conf.log_replay_file, conf, player1, player2);
+    }
+    defer if (log_replay_file_handle) |r| r.deinit();
 
     var num_move: u16 = 1;
 
@@ -119,19 +135,29 @@ pub fn launch_server(conf: *const config.Config) !void {
     }
 
     var start_time = std.time.microTimestamp();
-    var pos1 = player1.begin() catch |e| return handle_player_error(e, 1);
+    var pos1 = player1.begin() catch |e| return handle_player_error(e, 1, log_replay_file_handle);
     var end_time = std.time.microTimestamp();
-    _ = ctx.board.place(pos1, .Player1) catch |e| return handle_player_error(e, 1); // Is never a winning move
+    _ = ctx.board.place(pos1, .Player1) catch |e| return handle_player_error(e, 1, log_replay_file_handle); // Is never a winning move
     try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
+    if (log_replay_file_handle) |r| {
+        try r.write_move(end_time, 1, pos1[0], pos1[1], end_time - start_time);
+    }
     try while (true) {
         start_time = std.time.microTimestamp();
-        const pos2 = player2.turn(pos1) catch |e| break handle_player_error(e, 2);
+        const pos2 = player2.turn(pos1) catch |e| break handle_player_error(e, 2, log_replay_file_handle);
         end_time = std.time.microTimestamp();
-        const pos2_win = ctx.board.place(pos2, .Player2) catch |e| break handle_player_error(e, 2);
+        const pos2_win = ctx.board.place(pos2, .Player2) catch |e| break handle_player_error(e, 2, log_replay_file_handle);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos2, num_move, 2, end_time - start_time);
+        if (log_replay_file_handle) |r| {
+            try r.write_move(end_time, 2, pos2[0], pos2[1], end_time - start_time);
+        }
+
         if (pos2_win) {
             logz.info().ctx("Player 2 wins!").log();
+            if (log_replay_file_handle) |r| {
+                try r.write_event(end_time, 0, "PLAYER2_WIN");
+            }
             break;
         }
         if (num_move >= ctx.conf.game_board_size * ctx.conf.game_board_size) {
@@ -140,17 +166,23 @@ pub fn launch_server(conf: *const config.Config) !void {
         }
 
         start_time = std.time.microTimestamp();
-        pos1 = player1.turn(pos2) catch |e| break handle_player_error(e, 1);
+        pos1 = player1.turn(pos2) catch |e| break handle_player_error(e, 1, log_replay_file_handle);
         end_time = std.time.microTimestamp();
-        const pos1_win = ctx.board.place(pos1, .Player1) catch |e| break handle_player_error(e, 1);
+        const pos1_win = ctx.board.place(pos1, .Player1) catch |e| break handle_player_error(e, 1, log_replay_file_handle);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
+        if (log_replay_file_handle) |r|
+            try r.write_move(end_time, 1, pos1[0], pos1[1], end_time - start_time);
         if (pos1_win) {
             logz.info().ctx("Player 1 wins!").log();
+            if (log_replay_file_handle) |r|
+                try r.write_event(end_time, 0, "PLAYER1_WIN");
             break;
         }
         if (num_move >= ctx.conf.game_board_size * ctx.conf.game_board_size) {
             logz.info().ctx("I don't know how you did it, but it's a tie! The board is full.").log();
+            if (log_replay_file_handle) |r|
+                try r.write_event(end_time, 0, "DRAW");
             break;
         }
     };
