@@ -98,9 +98,15 @@ pub fn launch_server(conf: *const config.Config) !void {
     defer player1.deinit();
     var player2 = try Client.init(conf.player2_path, conf, 2);
     defer player2.deinit();
-    try player1.start_process(&ctx);
+    player1.start_process(&ctx) catch {
+        call_winning_player(2);
+        return;
+    };
     defer player1.stop_child(conf.other_end_grace_time);
-    try player2.start_process(&ctx);
+    player2.start_process(&ctx) catch {
+        call_winning_player(1);
+        return;
+    };
     defer player2.stop_child(conf.other_end_grace_time);
 
     var num_move: u16 = 1;
