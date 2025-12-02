@@ -240,7 +240,9 @@ pub const Client = struct {
         const start_time = std.time.microTimestamp();
         while (true) {
             const current_time = std.time.microTimestamp();
-            const remaining_time: i32 = @max(0, @as(i32, @intCast(self.turn_time)) - @as(i32, @intCast(@divTrunc(current_time - start_time, 1000))));
+            const remaining_time_turn: i32 = @max(0, @as(i32, @intCast(self.turn_time)) - @as(i32, @intCast(@divTrunc(current_time - start_time, 1000))));
+            const remaining_time_match: i32 = @max(0, @as(i32, @intCast(self.match_time_remaining)) - @as(i32, @intCast(@divTrunc(current_time - start_time, 1000))));
+            const remaining_time = @min(remaining_time_match, remaining_time_turn);
 
             const cmd = try self.get_command_with_timeout(if (self.turn_time != 0) remaining_time else -1);
             if (cmd == null)
@@ -251,7 +253,11 @@ pub const Client = struct {
                     self.handle_log(&l);
                     continue;
                 },
-                .ResponsePosition => |p| return p,
+                .ResponsePosition => |p| {
+                    const end_time = std.time.microTimestamp();
+                    self.match_time_remaining -= @max(0, @divTrunc(end_time - start_time, 1000));
+                    return p;
+                },
                 else => |c| {
                     logz.err().ctx("Did not get a position or a log from brain").string("actual", @typeName(@TypeOf(c))).log();
                     return error.BadCommand;
