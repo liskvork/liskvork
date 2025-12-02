@@ -55,8 +55,8 @@ fn dump_after_move(board_file: std.fs.File, ctx: *const Context, pos: game.Posit
 
 fn call_winning_player(num_player: u2) void {
     if (num_player == 1) {
-        logz.info().ctx("Player1 wins!").log();
-    } else logz.info().ctx("Player2 wins!").log();
+        logz.info().ctx("Player 1 wins!").log();
+    } else logz.info().ctx("Player 2 wins!").log();
 }
 
 fn handle_player_error(e: anyerror, num_player: u2) !void {
