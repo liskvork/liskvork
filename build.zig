@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const default_version_string = "0.6.0-dev";
+const default_version_string = "0.7.0-dev";
 
 const default_bin_name = "liskvork";
 
