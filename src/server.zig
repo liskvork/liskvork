@@ -162,6 +162,8 @@ pub fn launch_server(conf: *const config.Config) !void {
         }
         if (num_move >= ctx.conf.game_board_size * ctx.conf.game_board_size) {
             logz.info().ctx("I don't know how you did it, but it's a tie! The board is full.").log();
+            if (log_replay_file_handle) |r|
+                try r.write_event(end_time, 0, "DRAW");
             break;
         }
 
