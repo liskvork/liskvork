@@ -24,6 +24,7 @@ const build_options = struct {
     use_system_allocator: bool,
     llvm: ?bool,
     build_all: bool,
+    man_pages: bool
 };
 
 fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, opt: build_options) void {
@@ -61,6 +62,11 @@ fn set_build_options(b: *std.Build) build_options {
             bool,
             "build_all",
             "build on all platforms possible",
+        ) orelse false,
+        .man_pages = b.option(
+            bool, 
+            "man_pages", 
+            "build man pages for the installation"
         ) orelse false,
     };
 }
@@ -149,6 +155,15 @@ pub fn build(b: *std.Build) !void {
             }
         }
         return;
+    }
+
+    if (opt.man_pages) {
+        const scdoc = b.addSystemCommand(&.{ "/bin/sh", "-c", "scdoc < doc/liskvork.1.scd" });
+        scdoc.addFileArg(b.path("doc/liskvork.1.scd"));
+
+        const stdout = scdoc.captureStdOut();
+        const output_file = b.addInstallFile(stdout, "doc/liskvork.1");
+        b.getInstallStep().dependOn(&output_file.step);
     }
 
     // Not building for all targets, setup tests and run steps
