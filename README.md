@@ -68,8 +68,16 @@ zig build -Doptimize=ReleaseSafe
 
 ## Installing
 
-Grab a binary from [the release server](https://releases.liskvork.org) and then
-just launch it.
+### Arch Linux (AUR)
+
+[liskvork](https://aur.archlinux.org/packages/liskvork) is available as a package in the [AUR](https://aur.archlinux.org). You can install it with your preferred [AUR helper](https://wiki.archlinux.org/title/AUR_helpers). For example `paru`:
+```bash
+paru -S liskvork
+```
+
+### Other OS & Linux Distributions
+
+You can download the binaries [straight from the official release page](https://releases.liskvork.org) and add them to a directory specified in your `PATH` environment. Make sure to download the right release for your OS and architecture.
 
 ## Launching liskvork
 
