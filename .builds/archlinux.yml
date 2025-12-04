@@ -1,26 +1,29 @@
 image: archlinux
 packages:
     - zig
+    - scdoc
+    - tree
 sources:
     - https://git.sr.ht/~emneo/liskvork
 tasks:
-    - build: |
-          cd liskvork
-          time zig build --summary all
+    - build_with_docs: |
+        cd liskvork
+        time zig build -Dman_pages --summary all
     - build_all_debug: |
-          cd liskvork
-          time zig build -Dbuild_all -Doptimize=Debug --summary all
+        cd liskvork
+        time zig build -Dbuild_all -Doptimize=Debug --summary all
     - build_all_release: |
-          cd liskvork
-          time zig build -Dbuild_all -Doptimize=ReleaseSafe --summary all
+        cd liskvork
+        time zig build -Dbuild_all -Doptimize=ReleaseSafe --summary all
     - test: |
-          cd liskvork
-          time zig build test --summary all
+        cd liskvork
+        time zig build test --summary all
     - export: |
-          cd liskvork/zig-out/bin
-          rm liskvork
-          tar czvf ../../liskvork-dev-builds.tar.gz *
-          tar cJvf ../../liskvork-dev-builds.tar.xz *
+        cd liskvork/zig-out/
+        rm bin/liskvork
+        tree
+        tar czvf ../liskvork-dev-builds.tar.gz *
+        tar cJvf ../liskvork-dev-builds.tar.xz *
 artifacts:
     - liskvork/liskvork-dev-builds.tar.gz
     - liskvork/liskvork-dev-builds.tar.xz
