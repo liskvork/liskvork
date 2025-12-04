@@ -24,7 +24,7 @@ const build_options = struct {
     use_system_allocator: bool,
     llvm: ?bool,
     build_all: bool,
-    man_pages: bool
+    man_pages: bool,
 };
 
 fn add_options_to_bin(b: *std.Build, bin: *std.Build.Step.Compile, opt: build_options) void {
@@ -64,9 +64,9 @@ fn set_build_options(b: *std.Build) build_options {
             "build on all platforms possible",
         ) orelse false,
         .man_pages = b.option(
-            bool, 
-            "man_pages", 
-            "build man pages for the installation"
+            bool,
+            "man_pages",
+            "build man pages for the installation",
         ) orelse false,
     };
 }
