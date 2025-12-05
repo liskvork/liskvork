@@ -71,8 +71,19 @@ zig build -Doptimize=ReleaseSafe
 ### Arch Linux (AUR)
 
 [liskvork](https://aur.archlinux.org/packages/liskvork) is available as a package in the [AUR](https://aur.archlinux.org). You can install it with your preferred [AUR helper](https://wiki.archlinux.org/title/AUR_helpers). For example `paru`:
-```bash
+```sh
 paru -S liskvork
+```
+
+### Gentoo Linux (overlay)
+
+liskvork is available on the [thuis overlay](https://git.sr.ht/~emneo/thuis).
+You first need to enable the overlay and then emerge the package.
+Here is how you would do it with eselect-repository installed (with root):
+```sh
+eselect repository enable thuis
+emaint -r thuis sync
+emerge -av liskvork
 ```
 
 ### Other OS & Linux Distributions
