@@ -158,11 +158,11 @@ pub fn build(b: *std.Build) !void {
     }
 
     if (opt.man_pages) {
-        const scdoc = b.addSystemCommand(&.{ "/bin/sh", "-c", "scdoc < doc/liskvork.1.scd" });
+        const scdoc = b.addSystemCommand(&.{ "/bin/sh", "-c", b.fmt("cd {s} && scdoc < doc/liskvork.1.scd", .{b.build_root.path orelse "."}) });
         scdoc.addFileArg(b.path("doc/liskvork.1.scd"));
 
         const stdout = scdoc.captureStdOut();
-        const output_file = b.addInstallFile(stdout, "doc/liskvork.1");
+        const output_file = b.addInstallFile(stdout, "share/man/man1/liskvork.1");
         b.getInstallStep().dependOn(&output_file.step);
     }
 
