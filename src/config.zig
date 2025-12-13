@@ -29,10 +29,13 @@ pub const Config = struct {
     other_end_grace_time: u64,
 
     // Overrides config keys with parsed command line arguments.
-    pub fn override(self: *Config, arguments: args.Args) void {
+    pub fn override(self: *Config, arguments: args.Args) !void {
         inline for (comptime std.meta.fieldNames(args.Args)) |field| {
             if (@hasField(Config, field) and @field(arguments, field) != null) {
-                @field(self, field) = @field(arguments, field).?;
+                if (@TypeOf(@field(arguments, field).?) == []const u8) {
+                    utils.allocator.free(@field(self, field));
+                    @field(self, field) = try utils.allocator.dupe(u8, @field(arguments, field).?);
+                } else @field(self, field) = @field(arguments, field).?;
             }
         }
     }
