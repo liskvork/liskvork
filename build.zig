@@ -105,6 +105,35 @@ fn supports(comptime os: std.Target.Os.Tag, arch: std.Target.Cpu.Arch) bool {
     };
 }
 
+const lv_modules = struct {
+    game: *std.Build.Module,
+    protocol: *std.Build.Module,
+};
+
+fn create_lv_modules(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+) lv_modules {
+    const game = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/game.zig"),
+    });
+    const protocol = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("src/protocol.zig"),
+        .imports = &.{
+            .{ .name = "gomoku_game", .module = game },
+        },
+    });
+    return .{
+        .game = game,
+        .protocol = protocol,
+    };
+}
+
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -115,8 +144,9 @@ pub fn build(b: *std.Build) !void {
     const ini_pkg = b.dependency("ini", pkg_args);
     const logz_pkg = b.dependency("logz", pkg_args);
     const zul_pkg = b.dependency("zul", pkg_args);
-    const libgomoku_pkg = b.dependency("libgomoku", pkg_args);
     const zigclap_pkg = b.dependency("clap", pkg_args);
+
+    const lv = create_lv_modules(b, target, optimize);
 
     if (opt.build_all) {
         // We want to build all targets, to check if all platforms build or to
@@ -130,6 +160,7 @@ pub fn build(b: *std.Build) !void {
                     .os_tag = t_os,
                 };
                 const resolved_target = std.Build.resolveTargetQuery(b, t);
+                const lv_x = create_lv_modules(b, resolved_target, optimize);
                 const liskvork_mod = b.createModule(.{
                     .optimize = optimize,
                     .target = resolved_target,
@@ -140,8 +171,8 @@ pub fn build(b: *std.Build) !void {
                         .{ .name = "logz", .module = logz_pkg.module("logz") },
                         .{ .name = "zul", .module = zul_pkg.module("zul") },
                         .{ .name = "clap", .module = zigclap_pkg.module("clap") },
-                        .{ .name = "gomoku_game", .module = libgomoku_pkg.module("gomoku_game") },
-                        .{ .name = "gomoku_protocol", .module = libgomoku_pkg.module("gomoku_protocol") },
+                        .{ .name = "gomoku_game", .module = lv_x.game },
+                        .{ .name = "gomoku_protocol", .module = lv_x.protocol },
                     },
                 });
 
@@ -177,8 +208,8 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "logz", .module = logz_pkg.module("logz") },
             .{ .name = "zul", .module = zul_pkg.module("zul") },
             .{ .name = "clap", .module = zigclap_pkg.module("clap") },
-            .{ .name = "gomoku_game", .module = libgomoku_pkg.module("gomoku_game") },
-            .{ .name = "gomoku_protocol", .module = libgomoku_pkg.module("gomoku_protocol") },
+            .{ .name = "gomoku_game", .module = lv.game },
+            .{ .name = "gomoku_protocol", .module = lv.protocol },
         },
     });
 
@@ -197,6 +228,8 @@ pub fn build(b: *std.Build) !void {
         run_cmd.addArgs(args);
     }
 
+    // --- TESTS ---
+
     const run_step = b.step("run", "Run liskvork");
     run_step.dependOn(&run_cmd.step);
 
@@ -211,4 +244,28 @@ pub fn build(b: *std.Build) !void {
     const run_unit_tests = b.addRunArtifact(unit_tests);
     run_unit_tests.has_side_effects = true;
     test_step.dependOn(&run_unit_tests.step);
+
+    const test_step_game = b.step("test_game", "Run game unit tests");
+
+    const unit_tests_game = b.addTest(.{
+        .root_module = lv.game,
+        .use_llvm = opt.llvm,
+    });
+
+    const run_unit_tests_game = b.addRunArtifact(unit_tests_game);
+    run_unit_tests_game.has_side_effects = true;
+    test_step_game.dependOn(&run_unit_tests_game.step);
+    test_step.dependOn(&run_unit_tests_game.step);
+
+    const test_step_protocol = b.step("test_protocol", "Run protocol unit tests");
+
+    const unit_tests_protocol = b.addTest(.{
+        .root_module = lv.protocol,
+        .use_llvm = opt.llvm,
+    });
+
+    const run_unit_tests_protocol = b.addRunArtifact(unit_tests_protocol);
+    run_unit_tests_protocol.has_side_effects = true;
+    test_step_protocol.dependOn(&run_unit_tests_protocol.step);
+    test_step.dependOn(&run_unit_tests_protocol.step);
 }
