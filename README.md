@@ -2,15 +2,12 @@
 
 Modern multi-platform gomoku game server.
 
-Main repository URL: <https://git.sr.ht/~emneo/liskvork>
-
-[![builds.sr.ht status](https://builds.sr.ht/~emneo/liskvork.svg)](https://builds.sr.ht/~emneo/liskvork)
+Main repository URL: <https://codeberg.org/liskvork/liskvork>
 
 ## Contribution
 
 Please take a look at the [CONTRIBUTING.md](CONTRIBUTING.md) file, then consider
-sending a patch on the
-[development mailing list](https://lists.sr.ht/~emneo/liskvork-devel).
+opening a pull request on the [official repo](https://codeberg.org/liskvork/liskvork)
 
 ## License
 
@@ -38,13 +35,10 @@ or later.
 ## Reporting bugs/Submitting patches
 
 You can see open tickets bugs over
-[here](https://todo.sr.ht/~emneo/liskvork).
+[here](https://codeberg.org/liskvork/liskvork/issues).
 
-You can submit patches over
-[here](https://lists.sr.ht/~emneo/liskvork-devel).
-
-You can talk/discuss about the project, and ask questions about it over
-[here](https://lists.sr.ht/~emneo/liskvork-discuss).
+You can submit pull requests over
+[here](https://codeberg.org/liskvork/liskvork/pulls).
 
 ## Building from source
 
@@ -58,7 +52,7 @@ docker build . --build-arg BUILD_VERSION=0.0.0-dev -t liskvork
 
 #### Dependencies
 
-- zig 0.15.0 (May work with newer versions but has not been tested)
+- zig 0.16.0 (May work with newer versions but has not been tested)
 
 #### Step
 
@@ -110,7 +104,7 @@ docker run -v $(pwd):/data/:Z liskvork
 
 ```sh
 nix --extra-experimental-features "nix-command flakes" \
-  run sourcehut:~emneo/liskvork
+  run git+https://codeberg.org/liskvork/liskvork
 ```
 
 ## Configuration
