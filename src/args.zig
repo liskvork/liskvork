@@ -41,8 +41,8 @@ pub fn handle() !Args {
     };
 
     var diag = clap.Diagnostic{};
-    var res = clap.parse(clap.Help, &params, parsers, .{ .diagnostic = &diag, .allocator = utils.allocator, .assignment_separators = "=" }) catch |err| {
-        try diag.reportToFile(.stderr(), err);
+    var res = clap.parse(clap.Help, &params, parsers, utils.process_args, .{ .diagnostic = &diag, .allocator = utils.allocator, .assignment_separators = "=" }) catch |err| {
+        try diag.reportToFile(utils.io, .stderr(), err);
         return err;
     };
     defer res.deinit();
@@ -63,11 +63,11 @@ pub fn handle() !Args {
 }
 
 pub fn print_help() !void {
-    const args = try std.process.argsAlloc(utils.allocator);
-    defer std.process.argsFree(utils.allocator, args);
+    var it = try utils.process_args.iterateAllocator(utils.allocator);
+    defer it.deinit();
 
-    std.debug.print("USAGE: {s} ", .{args[0]});
-    try clap.usageToFile(.stderr(), clap.Help, &params);
+    std.debug.print("USAGE: {s} ", .{it.next() orelse "liskvork"});
+    try clap.usageToFile(utils.io, .stderr(), clap.Help, &params);
     std.debug.print("\n", .{});
-    try clap.helpToFile(.stderr(), clap.Help, &params, .{});
+    try clap.helpToFile(utils.io, .stderr(), clap.Help, &params, .{});
 }

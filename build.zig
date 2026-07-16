@@ -161,7 +161,7 @@ pub fn build(b: *std.Build) !void {
         const scdoc = b.addSystemCommand(&.{ "/bin/sh", "-c", b.fmt("cd {s} && scdoc < doc/liskvork.1.scd", .{b.build_root.path orelse "."}) });
         scdoc.addFileArg(b.path("doc/liskvork.1.scd"));
 
-        const stdout = scdoc.captureStdOut();
+        const stdout = scdoc.captureStdOut(.{});
         const output_file = b.addInstallFile(stdout, "share/man/man1/liskvork.1");
         b.getInstallStep().dependOn(&output_file.step);
     }
@@ -205,10 +205,6 @@ pub fn build(b: *std.Build) !void {
     const unit_tests = b.addTest(.{
         .root_module = liskvork_mod,
         .use_llvm = opt.llvm,
-        .test_runner = .{
-            .path = b.path("test_runner.zig"),
-            .mode = .simple,
-        },
     });
     add_options_to_bin(b, unit_tests, opt);
 

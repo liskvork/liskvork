@@ -5,7 +5,7 @@ const utils = @import("utils.zig");
 
 const Self = @This();
 
-file: std.fs.File = undefined,
+file: std.Io.File = undefined,
 
 pub const Error = error{
     FileNotOpen,
@@ -29,11 +29,11 @@ fn dump_header(self: *Self, conf: *const config.Config, p1: client.Client, p2: c
     );
     defer utils.allocator.free(header);
 
-    try self.file.writeAll(header);
+    try self.file.writeStreamingAll(utils.io, header);
 }
 
-pub fn init(dir: std.fs.Dir, path: []const u8, conf: *const config.Config, p1: client.Client, p2: client.Client) !*Self {
-    const file = try dir.createFile(path, .{});
+pub fn init(dir: std.Io.Dir, path: []const u8, conf: *const config.Config, p1: client.Client, p2: client.Client) !*Self {
+    const file = try dir.createFile(utils.io, path, .{});
     const p = try utils.allocator.create(Self);
     p.* = .{
         .file = file,
@@ -47,7 +47,7 @@ pub fn init(dir: std.fs.Dir, path: []const u8, conf: *const config.Config, p1: c
 fn write_line(self: *Self, ts: i64, id: u2, msg: []const u8) !void {
     const line = try std.fmt.allocPrint(utils.allocator, "{d}:{d}:{s}\n", .{ ts, id, msg });
     defer utils.allocator.free(line);
-    try self.file.writeAll(line);
+    try self.file.writeStreamingAll(utils.io, line);
 }
 
 pub fn write_move(self: *Self, ts: i64, id: u2, x: usize, y: usize, time_taken: i64) !void {
@@ -61,6 +61,6 @@ pub fn write_event(self: *Self, ts: i64, id: u2, event: []const u8) !void {
 }
 
 pub fn deinit(self: *Self) void {
-    self.file.close();
+    self.file.close(utils.io);
     utils.allocator.destroy(self);
 }

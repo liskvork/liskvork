@@ -13,8 +13,6 @@ const Client = client.Client;
 const game = @import("gomoku_game");
 const Replay = @import("replay.zig");
 
-const WriteError = @import("std").posix.WriteError;
-
 pub const Context = struct {
     const Self = @This();
 
@@ -35,7 +33,7 @@ pub const Context = struct {
     }
 };
 
-fn dump_after_move(board_file: std.fs.File, ctx: *const Context, pos: game.Position, num_move: u16, num_player: u2, time_taken: i64) !void {
+fn dump_after_move(board_file: std.Io.File, ctx: *const Context, pos: game.Position, num_move: u16, num_player: u2, time_taken: i64) !void {
     const start = try std.fmt.allocPrint(
         utils.allocator,
         "Move {}:\nPlayer{}: {},{}\nTime: {d:.3}ms\n",
@@ -49,9 +47,9 @@ fn dump_after_move(board_file: std.fs.File, ctx: *const Context, pos: game.Posit
     );
     defer utils.allocator.free(start);
 
-    try board_file.writeAll(start);
-    try ctx.board.dump(board_file, ctx.conf.log_board_color, pos);
-    try board_file.writeAll("\n\n");
+    try board_file.writeStreamingAll(utils.io, start);
+    try ctx.board.dump(utils.io, board_file, ctx.conf.log_board_color, pos);
+    try board_file.writeStreamingAll(utils.io, "\n\n");
 }
 
 fn call_winning_player(num_player: u2) void {
@@ -62,7 +60,7 @@ fn call_winning_player(num_player: u2) void {
 
 fn handle_player_error(e: anyerror, num_player: u2, replay_handle: ?*Replay) !void {
     const winning_player: u2 = if (num_player == 1) 2 else 1;
-    const t = std.time.microTimestamp();
+    const t = utils.micro_timestamp();
     var event: []const u8 = undefined;
     switch (e) {
         utils.ReadWriteError.TimeoutError => {
@@ -77,7 +75,7 @@ fn handle_player_error(e: anyerror, num_player: u2, replay_handle: ?*Replay) !vo
             logz.err().ctx("Player gave a position that's already in use").int("player", num_player).log();
             event = if (num_player == 1) "PLAYER1_ALREADY_TAKEN" else "PLAYER2_ALREADY_TAKEN";
         },
-        WriteError.BrokenPipe => {
+        error.BrokenPipe => {
             logz.err().ctx("Player has a broken pipe! Did your AI crash/close?").int("player", num_player).log();
             event = if (num_player == 1) "PLAYER1_BROKEN_PIPE" else "PLAYER2_BROKEN_PIPE";
         },
@@ -96,13 +94,14 @@ pub fn launch_server(conf: *const config.Config) !void {
     defer ctx.deinit();
 
     var read_buffer: [1024]u8 = undefined;
-    var stdin = std.fs.File.stdin().reader(&read_buffer);
+    var stdin = std.Io.File.stdin().reader(utils.io, &read_buffer);
 
-    const board_log_file = try std.fs.cwd().createFile(
+    const board_log_file = try std.Io.Dir.cwd().createFile(
+        utils.io,
         conf.log_board_file,
         .{},
     );
-    defer board_log_file.close();
+    defer board_log_file.close(utils.io);
 
     var player1 = try Client.init(conf.player1_path, conf, 1);
     defer player1.deinit();
@@ -121,7 +120,7 @@ pub fn launch_server(conf: *const config.Config) !void {
     var log_replay_file_handle: ?*Replay = null;
 
     if (conf.log_replay_file_enabled) {
-        log_replay_file_handle = try Replay.init(std.fs.cwd(), conf.log_replay_file, conf, player1, player2);
+        log_replay_file_handle = try Replay.init(std.Io.Dir.cwd(), conf.log_replay_file, conf, player1, player2);
     }
     defer if (log_replay_file_handle) |r| r.deinit();
 
@@ -129,23 +128,22 @@ pub fn launch_server(conf: *const config.Config) !void {
 
     if (!ctx.conf.other_auto_start) {
         logz.warn().ctx("auto_start is turned off! Press enter to start...").log();
-        var buf: [10]u8 = undefined; // 10 is a magic number, doesn't matter
-        _ = try stdin.interface.adaptToOldInterface().readUntilDelimiterOrEof(&buf, '\n');
+        _ = try stdin.interface.takeDelimiter('\n');
         logz.info().ctx("Starting...").log();
     }
 
-    var start_time = std.time.microTimestamp();
+    var start_time = utils.micro_timestamp();
     var pos1 = player1.begin() catch |e| return handle_player_error(e, 1, log_replay_file_handle);
-    var end_time = std.time.microTimestamp();
+    var end_time = utils.micro_timestamp();
     _ = ctx.board.place(pos1, .Player1) catch |e| return handle_player_error(e, 1, log_replay_file_handle); // Is never a winning move
     try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
     if (log_replay_file_handle) |r| {
         try r.write_move(end_time, 1, pos1[0], pos1[1], end_time - start_time);
     }
     try while (true) {
-        start_time = std.time.microTimestamp();
+        start_time = utils.micro_timestamp();
         const pos2 = player2.turn(pos1) catch |e| break handle_player_error(e, 2, log_replay_file_handle);
-        end_time = std.time.microTimestamp();
+        end_time = utils.micro_timestamp();
         const pos2_win = ctx.board.place(pos2, .Player2) catch |e| break handle_player_error(e, 2, log_replay_file_handle);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos2, num_move, 2, end_time - start_time);
@@ -167,9 +165,9 @@ pub fn launch_server(conf: *const config.Config) !void {
             break;
         }
 
-        start_time = std.time.microTimestamp();
+        start_time = utils.micro_timestamp();
         pos1 = player1.turn(pos2) catch |e| break handle_player_error(e, 1, log_replay_file_handle);
-        end_time = std.time.microTimestamp();
+        end_time = utils.micro_timestamp();
         const pos1_win = ctx.board.place(pos1, .Player1) catch |e| break handle_player_error(e, 1, log_replay_file_handle);
         num_move += 1;
         try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
@@ -191,8 +189,7 @@ pub fn launch_server(conf: *const config.Config) !void {
 
     if (!ctx.conf.other_auto_close) {
         logz.warn().ctx("auto_close is turned off! Press enter to close...").log();
-        var buf: [10]u8 = undefined; // 10 is a magic number, doesn't matter
-        _ = try stdin.interface.adaptToOldInterface().readUntilDelimiterOrEof(&buf, '\n');
+        _ = try stdin.interface.takeDelimiter('\n');
         logz.info().ctx("Closing...").log();
     }
 }

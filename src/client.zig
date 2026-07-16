@@ -51,15 +51,15 @@ pub const Client = struct {
             .filepath = try utils.allocator.dupe(u8, filepath),
             .match_time_remaining = if (p_num == 1) conf.player1_timeout_match else conf.player2_timeout_match,
             .turn_time = if (p_num == 1) conf.player1_timeout_turn else conf.player2_timeout_turn,
-            .read_buf = std.ArrayList(u8){},
+            .read_buf = .empty,
             .p_num = p_num,
         };
     }
 
     pub fn start_process(self: *Self, ctx: *const server.Context) !void {
-        const s = std.fs.cwd().statFile(self.filepath) catch |e| {
+        const s = std.Io.Dir.cwd().statFile(utils.io, self.filepath, .{}) catch |e| {
             switch (e) {
-                std.fs.File.OpenError.FileNotFound => {
+                std.Io.File.OpenError.FileNotFound => {
                     logz.fatal().ctx("Could not find brain executable").string("filepath", self.filepath).log();
                 },
                 else => {
@@ -68,18 +68,18 @@ pub const Client = struct {
             }
             return error.BadInitialization;
         };
-        if (builtin.os.tag != .windows and s.mode & 0o111 == 0) {
+        if (builtin.os.tag != .windows and s.permissions.toMode() & 0o111 == 0) {
             logz.fatal().ctx("The brain executable is not executable!").string("filepath", self.filepath).log();
             return error.BadInitialization;
         }
 
-        self.proc = std.process.Child.init(&.{self.filepath}, utils.allocator);
-        self.proc.stdout_behavior = .Pipe;
-        self.proc.stdin_behavior = .Pipe;
-        self.proc.stderr_behavior = .Inherit;
-
         logz.debug().ctx("Spawning process").string("filepath", self.filepath).log();
-        try self.proc.spawn();
+        self.proc = try std.process.spawn(utils.io, .{
+            .argv = &.{self.filepath},
+            .stdout = .pipe,
+            .stdin = .pipe,
+            .stderr = .inherit,
+        });
 
         try self.send_about();
         const about_resp = self.get_command_with_timeout(5 * std.time.ms_per_s) catch |e| {
@@ -91,7 +91,7 @@ pub const Client = struct {
             logz.fatal().ctx("Did not get proper ABOUT answer from AI!").log();
             return error.BadInitialization;
         }
-        defer about_resp.?.deinit();
+        defer about_resp.?.deinit(utils.allocator);
         switch (about_resp.?) {
             .ResponseAbout => |e| self.infos = e,
             else => {
@@ -110,7 +110,7 @@ pub const Client = struct {
             logz.fatal().ctx("Did not get proper START answer from AI!").log();
             return error.BadInitialization;
         }
-        defer start_resp.?.deinit();
+        defer start_resp.?.deinit(utils.allocator);
         switch (start_resp.?) {
             .ResponseOK => {},
             else => {
@@ -142,7 +142,7 @@ pub const Client = struct {
     fn send_message(self: *Self, msg: []const u8) !void {
         logz.debug().ctx("Sending message").string("data", std.mem.trim(u8, msg, &std.ascii.whitespace)).int("player", self.p_num).log();
         // Not sure if this can block at all, but it will for for now
-        try self.proc.stdin.?.writeAll(msg);
+        try self.proc.stdin.?.writeStreamingAll(utils.io, msg);
     }
 
     fn get_command_with_timeout(self: *Self, timeout: i32) !?protocol.ClientCommand {
@@ -158,7 +158,7 @@ pub const Client = struct {
     // That needs hella testing lmao
     fn get_line_with_timeout(self: *Self, timeout: i32) ![]const u8 {
         var left_timeout: i32 = timeout * std.time.us_per_ms;
-        const start_time = std.time.microTimestamp();
+        const start_time = utils.micro_timestamp();
         var tmp_rd_buf: [256]u8 = undefined;
         while (true) {
             if (std.mem.indexOf(u8, self.read_buf.items, "\n")) |i| {
@@ -170,7 +170,7 @@ pub const Client = struct {
             }
             const nb_read = try utils.read_with_timeout(self.proc.stdout.?, &tmp_rd_buf, if (timeout != -1) @divTrunc(left_timeout, std.time.us_per_ms) else -1);
             try self.read_buf.appendSlice(utils.allocator, tmp_rd_buf[0..nb_read]);
-            const current_time = std.time.microTimestamp();
+            const current_time = utils.micro_timestamp();
             left_timeout = @intCast(@max(0, timeout - (start_time - current_time)));
         }
     }
@@ -249,9 +249,9 @@ pub const Client = struct {
     }
 
     fn get_pos(self: *Self) !game.Position {
-        const start_time = std.time.microTimestamp();
+        const start_time = utils.micro_timestamp();
         while (true) {
-            const current_time = std.time.microTimestamp();
+            const current_time = utils.micro_timestamp();
             const remaining_time_turn: i32 = @max(0, @as(i32, @intCast(self.turn_time)) - @as(i32, @intCast(@divTrunc(current_time - start_time, 1000))));
             const remaining_time_match: i32 = @max(0, @as(i32, @intCast(self.match_time_remaining)) - @as(i32, @intCast(@divTrunc(current_time - start_time, 1000))));
             const remaining_time = @min(remaining_time_match, remaining_time_turn);
@@ -259,14 +259,14 @@ pub const Client = struct {
             const cmd = try self.get_command_with_timeout(if (self.turn_time != 0) remaining_time else -1);
             if (cmd == null)
                 return error.BadCommand;
-            defer cmd.?.deinit();
+            defer cmd.?.deinit(utils.allocator);
             switch (cmd.?) {
                 .CommandLog => |l| {
                     self.handle_log(&l);
                     continue;
                 },
                 .ResponsePosition => |p| {
-                    const end_time = std.time.microTimestamp();
+                    const end_time = utils.micro_timestamp();
                     self.match_time_remaining -= @max(0, @divTrunc(end_time - start_time, 1000));
                     return p;
                 },
@@ -292,9 +292,9 @@ pub const Client = struct {
         // FIXME: I honestly don't like the naming of this function
         if (grace_time != 0) {
             try self.send_end();
-            std.Thread.sleep(grace_time * std.time.ns_per_ms);
+            try std.Io.sleep(utils.io, .fromMilliseconds(@intCast(grace_time)), .awake);
         }
-        _ = try self.proc.kill(); // This won't kill the process if it is already gone
+        self.proc.kill(utils.io); // This won't kill the process if it is already gone
     }
 
     pub fn stop_child(self: *Self, grace_time: u64) void {

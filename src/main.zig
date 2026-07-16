@@ -12,8 +12,8 @@ const server = @import("server.zig");
 const utils = @import("utils.zig");
 const args = @import("args.zig");
 
-pub fn main() !void {
-    const start_time = std.time.milliTimestamp();
+pub fn main(init: std.process.Init) !void {
+    utils.init_process(init);
 
     defer {
         // Don't panic in release builds, that should only be needed in debug
@@ -23,7 +23,9 @@ pub fn main() !void {
         }
     }
 
-    try logz.setup(utils.allocator, .{
+    const start_time = utils.milli_timestamp();
+
+    try logz.setup(utils.io, utils.allocator, .{
         .level = .Warn,
         .output = .stdout,
         .encoding = .logfmt,
@@ -57,7 +59,7 @@ pub fn main() !void {
     if (args_data.no_replay)
         conf.log_replay_file_enabled = false;
 
-    try logz.setup(utils.allocator, .{
+    try logz.setup(utils.io, utils.allocator, .{
         .level = conf.log_level,
         .output = .stdout,
         .encoding = .logfmt,
@@ -67,7 +69,7 @@ pub fn main() !void {
 
     try server.launch_server(&conf);
 
-    const close_time = std.time.milliTimestamp();
+    const close_time = utils.milli_timestamp();
     const uptime = try zul.DateTime.fromUnix(close_time - start_time, .milliseconds);
     // TODO: Show days of uptime too (Not sure this is needed though)
     logz.info().ctx("Closing liskvork").fmt("uptime", "{f}", .{uptime.time()}).log();
@@ -75,6 +77,6 @@ pub fn main() !void {
 
 comptime {
     if (builtin.is_test) {
-        std.testing.refAllDeclsRecursive(@This());
+        std.testing.refAllDecls(@This()); // Not sure this is needed. TODO: Verify this
     }
 }

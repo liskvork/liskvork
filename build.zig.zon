@@ -6,24 +6,24 @@
 
     .dependencies = .{
         .ini = .{
-            .url = "https://github.com/ziglibs/ini/archive/918f16d0dcf893d0c1cdffe204faa08bb3584e04.tar.gz",
-            .hash = "ini-0.1.0-YCQ9Ys0pAABixEvvQvhVXAdqRE3wrZk_wiL9TPNHhB8d",
+            .url = "https://github.com/ziglibs/ini/archive/10cfba648f709588ab2f8785f56641024c510df9.tar.gz",
+            .hash = "ini-0.1.0-YCQ9YnsrAAAxl1kQHi95ths2vSkdPIJxzUg6e2Oo83w_",
         },
         .zul = .{
-            .url = "https://github.com/karlseguin/zul/archive/e770047f208cf4538fcd9fc64550c84fd5492fc4.tar.gz",
-            .hash = "zul-0.0.0-1oDot9yRBwDA_ovd6GC1M_ViW3LarywMaGrH6vcuEjqv",
+            .url = "https://github.com/karlseguin/zul/archive/146f9d5b2238c3a621b96345adf03490900c2fe2.tar.gz",
+            .hash = "zul-0.0.0-1oDot2KwBwC9c43wC7V9y4-xxg0a_d9okFDcJPhqmije",
         },
         .logz = .{
-            .url = "https://github.com/karlseguin/log.zig/archive/cc5268932e84da9dad09fd48b544d67212889c02.tar.gz",
-            .hash = "logz-0.0.0-O9YWXrJKAgBA98lbuTKXADVOR1ULzRGLMzrj1dkduNAF",
+            .url = "https://github.com/karlseguin/log.zig/archive/7fa8de39ad4d4adc54fce4d9bb0b6bc6c0076592.tar.gz",
+            .hash = "logz-0.0.0-O9YWXsllAgBq-S0z6q8AInWjei8h7polkVVRzJIGE-jW",
         },
         .clap = .{
-            .url = "https://github.com/Hejsil/zig-clap/archive/refs/tags/0.11.0.tar.gz",
-            .hash = "clap-0.11.0-oBajB-HnAQDPCKYzwF7rO3qDFwRcD39Q0DALlTSz5H7e",
+            .url = "https://github.com/Hejsil/zig-clap/archive/refs/tags/0.12.0.tar.gz",
+            .hash = "clap-0.12.0-oBajB7foAQDqlSwaSG5g0yq7xGbQARUsBk5T64gAOqP5",
         },
         .libgomoku = .{
-            .url = "https://codeberg.org/liskvork/libgomoku/archive/rewrite.tar.gz",
-            .hash = "libgomoku-0.2.0-VjnJyA20AACeSSSIW4joDsDLK4gDXTj-NN-80yvfWHHC",
+            .url = "https://codeberg.org/liskvork/libgomoku/archive/2345ef0e0f27648681526e72af41336059c4fde8.tar.gz",
+            .hash = "libgomoku-0.2.0-VjnJyDO0AAAEjJgkdnWi9AnHahhd6VyDYTPql8Z9Rrm0",
         },
     },
     .paths = .{

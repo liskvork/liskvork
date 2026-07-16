@@ -51,26 +51,20 @@ pub const ConfigError = error{
 
 fn make_opt_struct(comptime in: type) type {
     if (@typeInfo(in) != .@"struct") @compileError("Type must be a struct type.");
-    var fields: [std.meta.fields(in).len]std.builtin.Type.StructField = undefined;
-    for (std.meta.fields(in), 0..) |t, i| {
-        const fieldType = @Type(.{ .optional = .{ .child = t.type } });
-        const fieldName: [:0]const u8 = t.name[0..];
-        fields[i] = .{
-            .name = fieldName,
-            .type = fieldType,
+    const in_fields = std.meta.fields(in);
+    var names: [in_fields.len][]const u8 = undefined;
+    var types: [in_fields.len]type = undefined;
+    var attrs: [in_fields.len]std.builtin.Type.StructField.Attributes = undefined;
+    for (in_fields, 0..) |t, i| {
+        const fieldType = ?t.type;
+        names[i] = t.name[0..];
+        types[i] = fieldType;
+        attrs[i] = .{
             .default_value_ptr = &@as(fieldType, null),
-            .is_comptime = false,
-            .alignment = @alignOf(fieldType),
+            .@"align" = @alignOf(fieldType),
         };
     }
-    return @Type(.{
-        .@"struct" = .{
-            .layout = .auto,
-            .fields = &fields,
-            .decls = &[_]std.builtin.Type.Declaration{},
-            .is_tuple = false,
-        },
-    });
+    return @Struct(.auto, null, &names, &types, &attrs);
 }
 
 const tmp_config = make_opt_struct(Config);
@@ -163,12 +157,13 @@ pub fn create_default(filepath: []const u8) !void {
         .ctx("Creating config file...")
         .string("filepath", filepath)
         .log();
-    const tmp = try std.fs.cwd().createFile(
+    const tmp = try std.Io.Dir.cwd().createFile(
+        utils.io,
         filepath,
         .{},
     );
-    defer tmp.close();
-    _ = try tmp.writeAll(default_config);
+    defer tmp.close(utils.io);
+    _ = try tmp.writeStreamingAll(utils.io, default_config);
     logz.warn()
         .ctx("Config file created! Make sure to update it properly before running liskvork.")
         .string("filepath", "config.ini")
@@ -176,15 +171,15 @@ pub fn create_default(filepath: []const u8) !void {
 }
 
 pub fn parse(filepath: []const u8) !Config {
-    try std.fs.cwd().access(filepath, .{});
-    const file = try std.fs.cwd().openFile(filepath, .{});
-    defer file.close();
+    try std.Io.Dir.cwd().access(utils.io, filepath, .{});
+    const file = try std.Io.Dir.cwd().openFile(utils.io, filepath, .{});
+    defer file.close(utils.io);
 
     // That currently does read calls of size 1 for the whole parsing
     // Not really good but for now it is good
     // TODO: Patch this
     var read_buffer: [2048]u8 = undefined;
-    var file_reader = file.reader(&read_buffer);
+    var file_reader = file.reader(utils.io, &read_buffer);
     var parser = ini.parse(utils.allocator, &file_reader.interface, ";#");
     defer parser.deinit();
 
@@ -193,7 +188,7 @@ pub fn parse(filepath: []const u8) !Config {
         if (current_section) |sec|
             utils.allocator.free(sec);
     }
-    var fields = std.ArrayList(ini_field){};
+    var fields: std.ArrayList(ini_field) = .empty;
     defer {
         for (fields.items) |f|
             f.deinit();
@@ -208,7 +203,7 @@ pub fn parse(filepath: []const u8) !Config {
                 current_section = try utils.allocator.dupe(u8, heading);
             },
             .property => |kv| try fields.append(utils.allocator, try ini_field.init(current_section, kv, utils.allocator)),
-            .enumeration => |_| @panic("No support for enumerations"),
+            .enumeration => @panic("No support for enumerations"),
         }
     }
     for (fields.items) |f|
