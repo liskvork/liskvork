@@ -275,7 +275,7 @@ fn parse_suggest(r: *std.Io.Reader) !ClientCommand {
     };
 }
 
-pub fn parse(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
+pub fn parse(msg: []const u8, allocator: std.mem.Allocator) !ClientCommand {
     var r = std.Io.Reader.fixed(msg);
     for (log_starters, 0..) |s, i| {
         if (std.mem.startsWith(u8, msg, s))
@@ -289,7 +289,7 @@ pub fn parse(msg: []const u8, allocator: std.mem.Allocator) !?ClientCommand {
         return try parse_suggest(&r);
     const tmp = try parse_about_response(msg, allocator);
     if (tmp != null)
-        return tmp;
+        return tmp.?;
     return try parse_turn(&r);
 }
 

@@ -149,10 +149,10 @@ pub const Client = struct {
         const line = try self.get_line_with_timeout(timeout);
         defer utils.allocator.free(line);
         logz.debug().ctx("Received message").string("data", std.mem.trim(u8, line, &std.ascii.whitespace)).int("player", self.p_num).log();
-        const cmd = try protocol.parse(line, utils.allocator);
-        if (cmd == null)
-            logz.err().ctx("Could not parse command").string("data", line).log();
-        return cmd;
+        return protocol.parse(line, utils.allocator) catch |e| {
+            logz.err().ctx("Could not parse command").string("data", line).err(e).log();
+            return null;
+        };
     }
 
     // That needs hella testing lmao
@@ -162,7 +162,7 @@ pub const Client = struct {
         var tmp_rd_buf: [256]u8 = undefined;
         while (true) {
             if (std.mem.indexOf(u8, self.read_buf.items, "\n")) |i| {
-                const line = try utils.allocator.dupe(u8, self.read_buf.items[0 .. i + 1]);
+                const line = try utils.allocator.dupe(u8, self.read_buf.items[0..i]);
                 const rest = self.read_buf.items[i + 1 ..];
                 std.mem.copyForwards(u8, self.read_buf.items, rest);
                 self.read_buf.shrinkRetainingCapacity(rest.len);
