@@ -6,45 +6,38 @@
 }:
 linkFarm "zig-packages" [
   {
-    name = "clap-0.11.0-oBajB-HnAQDPCKYzwF7rO3qDFwRcD39Q0DALlTSz5H7e";
+    name = "clap-0.12.0-oBajB7foAQDqlSwaSG5g0yq7xGbQARUsBk5T64gAOqP5";
     path = fetchzip {
-      url = "https://github.com/Hejsil/zig-clap/archive/refs/tags/0.11.0.tar.gz";
-      hash = "sha256-XytqwtoE0xaR43YustgK68sAQPVfC0Dt+uCs8UTfkbU=";
+      url = "https://github.com/Hejsil/zig-clap/archive/refs/tags/0.12.0.tar.gz";
+      hash = "sha256-HveL7aJBC+/8PNlGYxtNZBrk3ytkM8zuXENO9JpygC0=";
     };
   }
   {
-    name = "ini-0.1.0-YCQ9Ys0pAABixEvvQvhVXAdqRE3wrZk_wiL9TPNHhB8d";
+    name = "ini-0.1.0-YCQ9YnsrAAAxl1kQHi95ths2vSkdPIJxzUg6e2Oo83w_";
     path = fetchzip {
-      url = "https://github.com/ziglibs/ini/archive/918f16d0dcf893d0c1cdffe204faa08bb3584e04.tar.gz";
-      hash = "sha256-4o4tFV05IV/uSQWDtwqaeStY46ORmze//2IlBQ5MhnY=";
+      url = "https://github.com/ziglibs/ini/archive/10cfba648f709588ab2f8785f56641024c510df9.tar.gz";
+      hash = "sha256-+5aUqjTlr477Nrt0mdhPaDPH8s5T+UqPGeLGPhypPZs=";
     };
   }
   {
-    name = "libgomoku-0.2.0-VjnJyA20AACeSSSIW4joDsDLK4gDXTj-NN-80yvfWHHC";
+    name = "logz-0.0.0-O9YWXsllAgBq-S0z6q8AInWjei8h7polkVVRzJIGE-jW";
     path = fetchzip {
-      url = "https://codeberg.org/liskvork/libgomoku/archive/rewrite.tar.gz";
-      hash = "sha256-b3OXo9aysD51O8/8qbEeRhv/LnRJqBfj2RabB/brl9E=";
+      url = "https://github.com/karlseguin/log.zig/archive/7fa8de39ad4d4adc54fce4d9bb0b6bc6c0076592.tar.gz";
+      hash = "sha256-8v4jGPlIDLjjJbhdEF8wZJDdKmlwei7dI8MdBc+abvg=";
     };
   }
   {
-    name = "logz-0.0.0-O9YWXrJKAgBA98lbuTKXADVOR1ULzRGLMzrj1dkduNAF";
+    name = "metrics-0.0.0-W7G4eIegAQD4XxA9Co7Atbw59u_2zvxYf406AZuoAHPM";
     path = fetchzip {
-      url = "https://github.com/karlseguin/log.zig/archive/cc5268932e84da9dad09fd48b544d67212889c02.tar.gz";
-      hash = "sha256-ivI9YUdz2gNoGjNkRxtsI9Z7ciF3up0LwXiLWakhi18=";
+      url = "https://github.com/karlseguin/metrics.zig/archive/6de29b83a750a06c438d268543e0e3c3c1b309da.tar.gz";
+      hash = "sha256-F0tnpGmcPtNIff+i9z9ZVWttLvAKQNXQzVAKnsSFV+o=";
     };
   }
   {
-    name = "metrics-0.0.0-W7G4eP2_AQBKsaql3dhLJ-pkf-RdP-zV3vflJy4N34jC";
+    name = "zul-0.0.0-1oDot2KwBwC9c43wC7V9y4-xxg0a_d9okFDcJPhqmije";
     path = fetchzip {
-      url = "https://github.com/karlseguin/metrics.zig/archive/13d8706e1ae921a8cc0d2f88283c1b5412c73e2f.tar.gz";
-      hash = "sha256-iu19RwA2pIhT+tSwaaLT+9XPNR8Ucaq88XfH9lkeyMk=";
-    };
-  }
-  {
-    name = "zul-0.0.0-1oDot9yRBwDA_ovd6GC1M_ViW3LarywMaGrH6vcuEjqv";
-    path = fetchzip {
-      url = "https://github.com/karlseguin/zul/archive/e770047f208cf4538fcd9fc64550c84fd5492fc4.tar.gz";
-      hash = "sha256-8Mi5Zx8oKH0IGYqR3Bbw5szl2CZUmhMvS6bMA1852KY=";
+      url = "https://github.com/karlseguin/zul/archive/146f9d5b2238c3a621b96345adf03490900c2fe2.tar.gz";
+      hash = "sha256-vgjW3rXKzBM8z10FZiOwPY451eGHgaOSJri+qCAdU+Y=";
     };
   }
 ]
