@@ -1,6 +1,7 @@
 # This should be all that's needed for zig
 .zig-cache/
 zig-out/
+zig-pkg/
 
 # But of course there's nix
 result

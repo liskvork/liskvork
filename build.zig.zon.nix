@@ -20,10 +20,10 @@ linkFarm "zig-packages" [
     };
   }
   {
-    name = "libgomoku-0.2.0-VjnJyEyqAAA4Efzu3ngIbgHRRCfn8JkxnVsPc83KjFNs";
+    name = "libgomoku-0.2.0-VjnJyA20AACeSSSIW4joDsDLK4gDXTj-NN-80yvfWHHC";
     path = fetchzip {
-      url = "https://git.sr.ht/~emneo/libgomoku/archive/0.2.0.tar.gz";
-      hash = "sha256-zXr8L4cOxAz1fct0Q6hUa9Q968/Affc+gH49bsEODq8=";
+      url = "https://codeberg.org/liskvork/libgomoku/archive/rewrite.tar.gz";
+      hash = "sha256-b3OXo9aysD51O8/8qbEeRhv/LnRJqBfj2RabB/brl9E=";
     };
   }
   {

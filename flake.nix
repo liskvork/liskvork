@@ -33,7 +33,7 @@
         check-added-large-files.enable = true;
         zig-fmt = {
           enable = true;
-          entry = "${lib.getExe pkgs.zig} fmt --check .";
+          entry = "${lib.getExe pkgs.zig} fmt --check";
           files = "\\.z(ig|on)$";
         };
       };

@@ -2,7 +2,7 @@
     .name = .liskvork,
     .fingerprint = 0x55aa8a61d457c3b1,
     .version = "0.6.0-dev",
-    .minimum_zig_version = "0.15.2",
+    .minimum_zig_version = "0.16.0",
 
     .dependencies = .{
         .ini = .{
@@ -17,13 +17,13 @@
             .url = "https://github.com/karlseguin/log.zig/archive/cc5268932e84da9dad09fd48b544d67212889c02.tar.gz",
             .hash = "logz-0.0.0-O9YWXrJKAgBA98lbuTKXADVOR1ULzRGLMzrj1dkduNAF",
         },
-        .libgomoku = .{
-            .url = "https://git.sr.ht/~emneo/libgomoku/archive/0.2.0.tar.gz",
-            .hash = "libgomoku-0.2.0-VjnJyEyqAAA4Efzu3ngIbgHRRCfn8JkxnVsPc83KjFNs",
-        },
         .clap = .{
             .url = "https://github.com/Hejsil/zig-clap/archive/refs/tags/0.11.0.tar.gz",
             .hash = "clap-0.11.0-oBajB-HnAQDPCKYzwF7rO3qDFwRcD39Q0DALlTSz5H7e",
+        },
+        .libgomoku = .{
+            .url = "https://codeberg.org/liskvork/libgomoku/archive/rewrite.tar.gz",
+            .hash = "libgomoku-0.2.0-VjnJyA20AACeSSSIW4joDsDLK4gDXTj-NN-80yvfWHHC",
         },
     },
     .paths = .{
