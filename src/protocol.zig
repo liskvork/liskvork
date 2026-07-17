@@ -319,12 +319,11 @@ test "about name version www" {
         "name   =\"    funny    \",\t\t      \t version\t =  \"1\t. 0\",www =       \"em\tneo.dev\"",
         alloc,
     );
-    try t.expect(cmd != null);
-    try t.expect(cmd.? == .ResponseAbout);
+    try t.expect(cmd == .ResponseAbout);
     defer {
-        for (cmd.?.ResponseAbout.items) |i|
+        for (cmd.ResponseAbout.items) |i|
             i.deinit(alloc);
-        cmd.?.ResponseAbout.deinit(alloc);
+        cmd.ResponseAbout.deinit(alloc);
     }
 
     const expected = [_]ClientInfo{
@@ -332,7 +331,7 @@ test "about name version www" {
         .{ .k = "version", .v = "1\t. 0" },
         .{ .k = "www", .v = "em\tneo.dev" },
     };
-    try t.expectEqualDeep(cmd.?.ResponseAbout.items, &expected);
+    try t.expectEqualDeep(cmd.ResponseAbout.items, &expected);
 }
 
 test "turn 0,0" {
@@ -340,7 +339,6 @@ test "turn 0,0" {
     const alloc = t.allocator;
 
     const cmd = try parse("0,0", alloc);
-    try t.expect(cmd != null);
 
     try t.expectEqualDeep(cmd, ClientCommand{
         .ResponsePosition = .{ 0, 0 },
@@ -352,7 +350,6 @@ test "turn 13,42" {
     const alloc = t.allocator;
 
     const cmd = try parse("13,42", alloc);
-    try t.expect(cmd != null);
 
     try t.expectEqualDeep(cmd, ClientCommand{
         .ResponsePosition = .{ 13, 42 },
@@ -448,12 +445,11 @@ test "about version www" {
     const alloc = t.allocator;
 
     var cmd = try parse("version=\"1.0\",www=\"emneo.dev\"", alloc);
-    try t.expect(cmd != null);
-    try t.expect(cmd.? == .ResponseAbout);
+    try t.expect(cmd == .ResponseAbout);
     defer {
-        for (cmd.?.ResponseAbout.items) |i|
+        for (cmd.ResponseAbout.items) |i|
             i.deinit(alloc);
-        cmd.?.ResponseAbout.deinit(alloc);
+        cmd.ResponseAbout.deinit(alloc);
     }
 
     const expected = [_]ClientInfo{
@@ -461,7 +457,7 @@ test "about version www" {
         .{ .k = "www", .v = "emneo.dev" },
     };
 
-    try t.expectEqualDeep(cmd.?.ResponseAbout.items, &expected);
+    try t.expectEqualDeep(cmd.ResponseAbout.items, &expected);
 }
 
 test "about just name" {
@@ -469,11 +465,10 @@ test "about just name" {
     const alloc = t.allocator;
 
     var cmd = try parse("name=\"funny\"", alloc);
-    try t.expect(cmd != null);
     defer {
-        for (cmd.?.ResponseAbout.items) |i|
+        for (cmd.ResponseAbout.items) |i|
             i.deinit(alloc);
-        cmd.?.ResponseAbout.deinit(alloc);
+        cmd.ResponseAbout.deinit(alloc);
     }
 
     var expected = std.ArrayList(ClientInfo).empty;
@@ -516,8 +511,7 @@ test "ko parsing with data" {
     const alloc = t.allocator;
 
     const cmd = try parse("KO YEAH THERE ARE SOME THINGS HERE", alloc);
-    try t.expect(cmd != null);
-    defer cmd.?.deinit(alloc);
+    defer cmd.deinit(alloc);
 
     try t.expectEqualDeep(cmd, ClientCommand{
         .ResponseKO = .{
@@ -573,9 +567,8 @@ test "debug log parsing" {
     const alloc = t.allocator;
 
     const cmd = try parse("DEBUG issou that works", alloc);
-    try t.expect(cmd != null);
 
-    defer cmd.?.deinit(alloc);
+    defer cmd.deinit(alloc);
 
     try t.expectEqualDeep(cmd, ClientCommand{
         .CommandLog = .{
@@ -590,9 +583,8 @@ test "info log parsing with whitespace" {
     const alloc = t.allocator;
 
     const cmd = try parse("MESSAGE \t  \t      issou that works", alloc);
-    try t.expect(cmd != null);
 
-    defer cmd.?.deinit(alloc);
+    defer cmd.deinit(alloc);
 
     try t.expectEqualDeep(cmd, ClientCommand{
         .CommandLog = .{
@@ -639,9 +631,8 @@ test "error log parsing with whitespace" {
     const alloc = t.allocator;
 
     const cmd = try parse("ERROR\t  \t      issou that works", alloc);
-    try t.expect(cmd != null);
 
-    defer cmd.?.deinit(alloc);
+    defer cmd.deinit(alloc);
 
     try t.expectEqualDeep(cmd, ClientCommand{
         .CommandLog = .{
