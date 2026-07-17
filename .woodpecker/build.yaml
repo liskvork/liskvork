@@ -5,9 +5,9 @@ when:
 steps:
   build:
     image: alpine:3.24
-    commands: |
-      apk add --no-cache zig scdoc
-      time zig build -Dman_pages --summary all
-      time zig build -Dbuild_all -Doptimize=Debug --summary all
-      time zig build -Dbuild_all -Doptimize=ReleaseSafe --summary all
-      time zig build test --summary all
+    commands:
+      - apk add --no-cache zig scdoc
+      - time zig build -Dman_pages --summary all
+      - time zig build -Dbuild_all -Doptimize=Debug --summary all
+      - time zig build -Dbuild_all -Doptimize=ReleaseSafe --summary all
+      - time zig build test --summary all
