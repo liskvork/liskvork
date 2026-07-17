@@ -1,0 +1,9 @@
+when:
+  branch: ${CI_REPO_DEFAULT_BRANCH}
+  event: [push, pull_request, manual, tag]
+
+steps:
+  build:
+    image: woodpeckerci/plugin-kaniko
+    settings:
+      dry-run: true
