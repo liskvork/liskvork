@@ -39,6 +39,10 @@ pub const ReadWriteError = error{
 // timeout in ms
 // TODO: Handle timeouts on windows
 pub fn read_with_timeout(f: std.Io.File, output: []u8, timeout: i32) !usize {
+    if (builtin.os.tag == .windows) {
+        // Windows is broken currently, will fix later ✨
+        return 0;
+    }
     if (builtin.os.tag != .windows) {
         var fds: [1]std.posix.pollfd = .{
             .{
