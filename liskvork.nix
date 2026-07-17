@@ -1,21 +1,24 @@
 {
   lib,
   stdenv,
-  zig,
+  zig_0_16,
   callPackage,
 }:
-stdenv.mkDerivation {
+stdenv.mkDerivation (finalAttrs: {
   pname = "liskvork";
   version = "0.0.0-dev";
 
-  env.XDG_CACHE_HOME = "${placeholder "out"}";
+  # env.XDG_CACHE_HOME = "${placeholder "out"}";
 
   src = lib.cleanSource ./.;
-  nativeBuildInputs = [zig.hook];
+  nativeBuildInputs = [zig_0_16];
 
-  postPatch = ''
-    ln -s ${callPackage ./build.zig.zon.nix {}} $ZIG_GLOBAL_CACHE_DIR/p
-  '';
+  deps = callPackage ./build.zig.zon.nix {};
+
+  zigBuildFlags = [
+    "--system"
+    "${finalAttrs.deps}"
+  ];
 
   meta = {
     description = "Modern multi-platform gomoku game server";
@@ -23,4 +26,4 @@ stdenv.mkDerivation {
     license = with lib.licenses; [eupl12];
     mainProgram = "liskvork";
   };
-}
+})

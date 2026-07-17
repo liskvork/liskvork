@@ -16,7 +16,6 @@
     forAllSystems = function:
       nixpkgs.lib.genAttrs [
         "x86_64-linux"
-        "x86_64-darwin"
         "aarch64-darwin"
         "aarch64-linux"
       ] (system: function nixpkgs.legacyPackages.${system});
@@ -24,7 +23,8 @@
     formatter = forAllSystems (pkgs: pkgs.alejandra);
 
     checks = forAllSystems (pkgs: let
-      inherit (pkgs) lib system;
+      inherit (pkgs) lib;
+      inherit (pkgs.stdenv.hostPlatform) system;
 
       hooks = {
         alejandra.enable = true;
@@ -46,18 +46,18 @@
 
     devShells = forAllSystems (pkgs: {
       default = pkgs.mkShell {
-        inherit (self.checks.${pkgs.system}.pre-commit-check) shellHook;
+        inherit (self.checks.${pkgs.stdenv.hostPlatform.system}.pre-commit-check) shellHook;
 
         name = "liskvork";
-        inputsFrom = pkgs.lib.attrsets.attrValues self.packages.${pkgs.system};
+        inputsFrom = pkgs.lib.attrsets.attrValues self.packages.${pkgs.stdenv.hostPlatform.system};
         packages = with pkgs; [
-          zls
+          zls_0_16
         ];
       };
     });
 
     packages = forAllSystems (pkgs: {
-      default = self.packages.${pkgs.system}.liskvork;
+      default = self.packages.${pkgs.stdenv.hostPlatform.system}.liskvork;
 
       liskvork = pkgs.callPackage ./liskvork.nix {};
     });
