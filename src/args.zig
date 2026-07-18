@@ -11,6 +11,7 @@ const help =
     \\-o, --output <OUT>        Set board output (defaults to config).
     \\-s, --size <SIZE>         Set board size.
     \\-m, --memory <MEM>        Set the maximum memory available for brains.
+    \\--enforce-memory          Enforce the memory limit (Linux only)
     \\-r, --replay-file <PATH>  Override the path to the replay output.
     \\--no-replay               Disable replay file output.
 ;
@@ -24,6 +25,7 @@ pub const Args = struct {
     log_replay_file: ?[]const u8,
     game_board_size: ?u32,
     game_max_memory: ?u64,
+    game_enforce_max_memory: ?bool,
 
     // Other flags
     help_flag: bool,
@@ -59,6 +61,7 @@ pub fn handle() !Args {
         .no_replay = res.args.@"no-replay" != 0,
         .game_board_size = res.args.size,
         .game_max_memory = res.args.memory,
+        .game_enforce_max_memory = if (res.args.@"enforce-memory" != 0) true else null,
     };
 }
 

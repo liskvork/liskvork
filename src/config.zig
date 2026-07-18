@@ -9,6 +9,7 @@ const args = @import("args.zig");
 pub const Config = struct {
     game_board_size: u32,
     game_max_memory: u64,
+    game_enforce_max_memory: bool,
 
     player1_path: []const u8,
     player1_timeout_match: u64,

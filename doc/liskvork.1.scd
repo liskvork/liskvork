@@ -2,7 +2,7 @@ liskvork(1)
 
 # NAME
 
-**liskvork** - Modern multi-platform gomoku game server 
+**liskvork** - Modern multi-platform gomoku game server
 
 # SYNOPSIS
 
@@ -12,7 +12,7 @@ liskvork(1)
 
 # DESCRIPTION
 
-**liskvork** is a modern game server to make AIs fight on a gomoku board. liskvork starts two brain executables and orchestrates the exchange between the two as well as enforce the rules of the game. By default if no **config.ini** file is found, liskvork will prompt the user to run with the **--init-config** flag. 
+**liskvork** is a modern game server to make AIs fight on a gomoku board. liskvork starts two brain executables and orchestrates the exchange between the two as well as enforce the rules of the game. By default if no **config.ini** file is found, liskvork will prompt the user to run with the **--init-config** flag.
 This will generate the default config in the current working directory. This configuration file will need to be edited in order to use liskvork properly.
 
 # OPTIONS
@@ -41,11 +41,14 @@ This will generate the default config in the current working directory. This con
 **-r**, **-\-replay-file**
 :  Set the output file for the game replay
 
+**-\-enforce-memory**
+:  Enforce the memory limit (Linux only)
+
 **-\-no-replay**
 :  Toggle the replay file output
 
 **-o**, **-\-output**
-:  Set the output file for the real-time board 
+:  Set the output file for the real-time board
 
 # CONFIGURATION
 **liskvork** needs a configuration file to work properly. Although it can be overriden with command line arguments, every other configuration keys will be loaded from the specified file.
@@ -58,6 +61,10 @@ Should be listed under the [game] tag
 
 **max_memory**
 :  Define the maximum allocated memory for each brains
+
+**enforce_max_memory**
+:  Whether to enforce the memory limit or not. This feature is Linux only, using it on another platform won't work
+! This is very badly enforced by the OS, enabling it is not recommended !
 
 ## PLAYER CONFIGURATION
 Should be listed under both [player1] **AND** [player2] tags
@@ -97,4 +104,3 @@ Should be listed under the [other] tag
 
 **end_grace_time**
 :  Set the amount of time a brain has to properly close before getting killed
-

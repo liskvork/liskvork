@@ -41,8 +41,8 @@ pub const Client = struct {
     match_time_remaining: u64,
     turn_time: u64,
     proc: std.process.Child = undefined,
-    read_buf: [256]u8 = undefined,
-    write_buf: [256]u8 = undefined,
+    read_buf: [2048]u8 = undefined,
+    write_buf: [2048]u8 = undefined,
     stdout_reader: std.Io.File.Reader = undefined,
     reader: *std.Io.Reader = undefined,
     stdin_writer: std.Io.File.Writer = undefined,
@@ -58,6 +58,27 @@ pub const Client = struct {
             .turn_time = if (p_num == 1) conf.player1_timeout_turn else conf.player2_timeout_turn,
             .p_num = p_num,
         };
+    }
+
+    fn set_memory_limit(self: *Self, limit: u64) !void {
+        const bytes_per_kilobyte = 1024;
+        var rl: std.os.linux.rlimit = .{
+            .cur = limit,
+            .max = limit,
+        };
+        logz.debug().ctx("Enforcing memory limit...").int("limit (KB)", limit / bytes_per_kilobyte).log();
+        if (self.proc.id == null) {
+            logz.fatal().ctx("Process not accessible for enforcement. Did the brain stop?").log();
+            return error.BadInitialization;
+        }
+        // Not sure we want to use .DATA here, but it will do for now
+        const result = std.os.linux.prlimit(self.proc.id.?, .DATA, &rl, null);
+        if (result != 0) {
+            const error_string = @tagName(std.c.errno(result));
+            logz.fatal().ctx("Memory enforcement on subprocess failed to set").stringSafe("errno", error_string).log();
+            return error.BadInitialization;
+        }
+        logz.debug().ctx("Memory limit enforced").log();
     }
 
     pub fn start_process(self: *Self, ctx: *const server.Context) !void {
@@ -89,6 +110,10 @@ pub const Client = struct {
         self.reader = &self.stdout_reader.interface;
         self.stdin_writer = self.proc.stdin.?.writer(utils.io, &self.write_buf);
         self.writer = &self.stdin_writer.interface;
+
+        // Enforce the memory limit if it's turned on *and* we are on Linux
+        if (ctx.conf.game_enforce_max_memory and ctx.conf.game_max_memory > 0 and builtin.os.tag == .linux)
+            try self.set_memory_limit(ctx.conf.game_max_memory);
 
         try self.send_about();
         const about_resp = self.get_command_with_timeout(5 * std.time.ms_per_s) catch |e| {
@@ -194,10 +219,10 @@ pub const Client = struct {
             .time_left,
             .timeout_turn,
             .timeout_match,
-            => |v| try self.send_info_no_check(
+            => |v| if (v != 0) try self.send_info_no_check(
                 @TypeOf(v),
                 @tagName(info),
-                if (v == 0) 99999999 else v,
+                v,
             ),
         }
     }

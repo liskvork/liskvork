@@ -65,6 +65,8 @@ pub fn main(init: std.process.Init) !void {
         .encoding = .logfmt,
     });
 
+    if (conf.game_enforce_max_memory and builtin.os.tag != .linux)
+        logz.warn().ctx("Memory limit enforcement is turned on but you are not on Linux! Disabling...").log();
     logz.info().ctx("Launching liskvork").stringSafe("version", build_config.version).log();
 
     try server.launch_server(&conf);
