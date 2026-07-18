@@ -6,14 +6,16 @@ const utils = @import("utils.zig");
 const Self = @This();
 
 file: std.Io.File = undefined,
+write_buffer: [128]u8 = undefined,
+file_writer: std.Io.File.Writer = undefined,
+writer: *std.Io.Writer = undefined,
 
 pub const Error = error{
     FileNotOpen,
 };
 
 fn dump_header(self: *Self, conf: *const config.Config, p1: client.Client, p2: client.Client) !void {
-    const header = try std.fmt.allocPrint(
-        utils.allocator,
+    try self.writer.print(
         "{d}\n{d} {d}\n{d} {d}\n{d} {d}\n{s}\n{s}\n---\n",
         .{
             conf.game_board_size,
@@ -27,9 +29,7 @@ fn dump_header(self: *Self, conf: *const config.Config, p1: client.Client, p2: c
             p2.name,
         },
     );
-    defer utils.allocator.free(header);
-
-    try self.file.writeStreamingAll(utils.io, header);
+    try self.writer.flush();
 }
 
 pub fn init(dir: std.Io.Dir, path: []const u8, conf: *const config.Config, p1: client.Client, p2: client.Client) !*Self {
@@ -38,29 +38,30 @@ pub fn init(dir: std.Io.Dir, path: []const u8, conf: *const config.Config, p1: c
     p.* = .{
         .file = file,
     };
+    p.file_writer = p.file.writer(utils.io, &p.write_buffer);
+    p.writer = &p.file_writer.interface;
     try p.dump_header(conf, p1, p2);
     return p;
 }
 
-// TODO: Rewrite all those allocs to be within a static buffer
-// there is absolutely no need for dynamic allocation here
-fn write_line(self: *Self, ts: i64, id: u2, msg: []const u8) !void {
-    const line = try std.fmt.allocPrint(utils.allocator, "{d}:{d}:{s}\n", .{ ts, id, msg });
-    defer utils.allocator.free(line);
-    try self.file.writeStreamingAll(utils.io, line);
-}
-
 pub fn write_move(self: *Self, ts: i64, id: u2, x: usize, y: usize, time_taken: i64) !void {
-    const msg = try std.fmt.allocPrint(utils.allocator, "{d} {d} {d}", .{ x, y, time_taken });
-    defer utils.allocator.free(msg);
-    try self.write_line(ts, id, msg);
+    try self.writer.print("{d}:{d}:{d} {d} {d}\n", .{
+        ts,
+        id,
+        x,
+        y,
+        time_taken,
+    });
+    try self.writer.flush();
 }
 
 pub fn write_event(self: *Self, ts: i64, id: u2, event: []const u8) !void {
-    try self.write_line(ts, id, event);
+    try self.writer.print("{d}:{d}:{s}\n", .{ ts, id, event });
+    try self.writer.flush();
 }
 
 pub fn deinit(self: *Self) void {
+    self.writer.flush() catch {};
     self.file.close(utils.io);
     utils.allocator.destroy(self);
 }
