@@ -206,6 +206,7 @@ pub fn parse(filepath: []const u8) !Config {
             .enumeration => @panic("No support for enumerations"),
         }
     }
+    errdefer deinit_config(tmp_config, &tmp);
     for (fields.items) |f|
         try map_value(f, &tmp, utils.allocator);
     return map_opt_struct_to_struct(tmp_config, Config, &tmp);
@@ -215,6 +216,7 @@ pub fn deinit_config(t: type, conf: *const t) void {
     inline for (std.meta.fields(@TypeOf(conf.*))) |f| {
         switch (f.type) {
             []const u8 => utils.allocator.free(@field(conf, f.name)),
+            ?[]const u8 => if (@field(conf, f.name) != null) utils.allocator.free(@field(conf, f.name).?),
             else => {},
         }
     }

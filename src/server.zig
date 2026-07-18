@@ -33,9 +33,8 @@ pub const Context = struct {
     }
 };
 
-fn dump_after_move(board_file: std.Io.File, ctx: *const Context, pos: game.Position, num_move: u16, num_player: u2, time_taken: i64) !void {
-    const start = try std.fmt.allocPrint(
-        utils.allocator,
+fn dump_after_move(board_writer: *std.Io.Writer, ctx: *const Context, pos: game.Position, num_move: u16, num_player: u2, time_taken: i64) !void {
+    try board_writer.print(
         "Move {}:\nPlayer{}: {},{}\nTime: {d:.3}ms\n",
         .{
             num_move,
@@ -45,11 +44,9 @@ fn dump_after_move(board_file: std.Io.File, ctx: *const Context, pos: game.Posit
             @as(f32, @floatFromInt(time_taken)) / @as(f32, @floatFromInt(std.time.us_per_ms)),
         },
     );
-    defer utils.allocator.free(start);
-
-    try board_file.writeStreamingAll(utils.io, start);
-    try ctx.board.dump(utils.io, board_file, ctx.conf.log_board_color, pos);
-    try board_file.writeStreamingAll(utils.io, "\n\n");
+    try ctx.board.dump(board_writer, ctx.conf.log_board_color, pos);
+    try board_writer.writeAll("\n\n");
+    try board_writer.flush();
 }
 
 fn call_winning_player(num_player: u2) void {
@@ -102,6 +99,10 @@ pub fn launch_server(conf: *const config.Config) !void {
         .{},
     );
     defer board_log_file.close(utils.io);
+    var board_log_writer_buf: [1024]u8 = undefined;
+    var board_log_writer_internal = board_log_file.writer(utils.io, &board_log_writer_buf);
+    var board_log_writer = &board_log_writer_internal.interface;
+    defer board_log_writer.flush() catch {};
 
     var player1 = try Client.init(conf.player1_path, conf, 1);
     defer player1.deinit();
@@ -136,7 +137,7 @@ pub fn launch_server(conf: *const config.Config) !void {
     var pos1 = player1.begin() catch |e| return handle_player_error(e, 1, log_replay_file_handle);
     var end_time = utils.micro_timestamp();
     _ = ctx.board.place(pos1, .Player1) catch |e| return handle_player_error(e, 1, log_replay_file_handle); // Is never a winning move
-    try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
+    try dump_after_move(board_log_writer, &ctx, pos1, num_move, 1, end_time - start_time);
     if (log_replay_file_handle) |r| {
         try r.write_move(end_time, 1, pos1[0], pos1[1], end_time - start_time);
     }
@@ -146,7 +147,7 @@ pub fn launch_server(conf: *const config.Config) !void {
         end_time = utils.micro_timestamp();
         const pos2_win = ctx.board.place(pos2, .Player2) catch |e| break handle_player_error(e, 2, log_replay_file_handle);
         num_move += 1;
-        try dump_after_move(board_log_file, &ctx, pos2, num_move, 2, end_time - start_time);
+        try dump_after_move(board_log_writer, &ctx, pos2, num_move, 2, end_time - start_time);
         if (log_replay_file_handle) |r| {
             try r.write_move(end_time, 2, pos2[0], pos2[1], end_time - start_time);
         }
@@ -170,7 +171,7 @@ pub fn launch_server(conf: *const config.Config) !void {
         end_time = utils.micro_timestamp();
         const pos1_win = ctx.board.place(pos1, .Player1) catch |e| break handle_player_error(e, 1, log_replay_file_handle);
         num_move += 1;
-        try dump_after_move(board_log_file, &ctx, pos1, num_move, 1, end_time - start_time);
+        try dump_after_move(board_log_writer, &ctx, pos1, num_move, 1, end_time - start_time);
         if (log_replay_file_handle) |r|
             try r.write_move(end_time, 1, pos1[0], pos1[1], end_time - start_time);
         if (pos1_win) {
