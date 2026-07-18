@@ -36,9 +36,8 @@ pub const ReadWriteError = error{
     ConnectionError,
 };
 
-// timeout in ms
-pub fn read_with_timeout(f: std.Io.File, output: []u8, timeout: i32) !usize {
-    const SelectResult = union(enum) { timeout: anyerror!void, rd: anyerror!usize };
+pub fn readline_with_timeout(reader: *std.Io.Reader, timeout: i32) ![]const u8 {
+    const SelectResult = union(enum) { timeout: anyerror!void, rd: anyerror![]const u8 };
     var buf: [1]SelectResult = undefined;
 
     var select: std.Io.Select(SelectResult) = .init(io, &buf);
@@ -49,11 +48,7 @@ pub fn read_with_timeout(f: std.Io.File, output: []u8, timeout: i32) !usize {
         .fromMilliseconds(timeout),
         .awake,
     });
-    select.async(.rd, std.Io.File.readStreaming, .{
-        f,
-        io,
-        &[_][]u8{output},
-    });
+    select.async(.rd, std.Io.Reader.takeDelimiterInclusive, .{ reader, '\n' });
 
     return switch (try select.await()) {
         .timeout => ReadWriteError.TimeoutError,

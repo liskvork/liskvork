@@ -41,7 +41,12 @@ pub const Client = struct {
     match_time_remaining: u64,
     turn_time: u64,
     proc: std.process.Child = undefined,
-    read_buf: std.ArrayList(u8),
+    read_buf: [256]u8 = undefined,
+    write_buf: [256]u8 = undefined,
+    stdout_reader: std.Io.File.Reader = undefined,
+    reader: *std.Io.Reader = undefined,
+    stdin_writer: std.Io.File.Writer = undefined,
+    writer: *std.Io.Writer = undefined,
     p_num: u2,
     initialized: bool = false,
     name: []const u8 = undefined,
@@ -51,7 +56,6 @@ pub const Client = struct {
             .filepath = try utils.allocator.dupe(u8, filepath),
             .match_time_remaining = if (p_num == 1) conf.player1_timeout_match else conf.player2_timeout_match,
             .turn_time = if (p_num == 1) conf.player1_timeout_turn else conf.player2_timeout_turn,
-            .read_buf = .empty,
             .p_num = p_num,
         };
     }
@@ -80,6 +84,11 @@ pub const Client = struct {
             .stdin = .pipe,
             .stderr = .inherit,
         });
+
+        self.stdout_reader = self.proc.stdout.?.reader(utils.io, &self.read_buf);
+        self.reader = &self.stdout_reader.interface;
+        self.stdin_writer = self.proc.stdin.?.writer(utils.io, &self.write_buf);
+        self.writer = &self.stdin_writer.interface;
 
         try self.send_about();
         const about_resp = self.get_command_with_timeout(5 * std.time.ms_per_s) catch |e| {
@@ -140,14 +149,11 @@ pub const Client = struct {
     }
 
     fn send_message(self: *Self, msg: []const u8) !void {
-        logz.debug().ctx("Sending message").string("data", std.mem.trim(u8, msg, &std.ascii.whitespace)).int("player", self.p_num).log();
-        // Not sure if this can block at all, but it will for for now
-        try self.proc.stdin.?.writeStreamingAll(utils.io, msg);
+        return self.send_format_message("{s}", .{msg});
     }
 
     fn get_command_with_timeout(self: *Self, timeout: i32) !?protocol.ClientCommand {
         const line = try self.get_line_with_timeout(timeout);
-        defer utils.allocator.free(line);
         logz.debug().ctx("Received message").string("data", std.mem.trim(u8, line, &std.ascii.whitespace)).int("player", self.p_num).log();
         return protocol.parse(line, utils.allocator) catch |e| {
             logz.err().ctx("Could not parse command").string("data", line).err(e).log();
@@ -155,43 +161,28 @@ pub const Client = struct {
         };
     }
 
-    // That needs hella testing lmao
     fn get_line_with_timeout(self: *Self, timeout: i32) ![]const u8 {
-        var left_timeout: i32 = timeout * std.time.us_per_ms;
-        const start_time = utils.micro_timestamp();
-        var tmp_rd_buf: [256]u8 = undefined;
-        while (true) {
-            if (std.mem.indexOf(u8, self.read_buf.items, "\n")) |i| {
-                const line = try utils.allocator.dupe(u8, self.read_buf.items[0..i]);
-                const rest = self.read_buf.items[i + 1 ..];
-                std.mem.copyForwards(u8, self.read_buf.items, rest);
-                self.read_buf.shrinkRetainingCapacity(rest.len);
-                return line;
-            }
-            const nb_read = try utils.read_with_timeout(self.proc.stdout.?, &tmp_rd_buf, if (timeout != -1) @divTrunc(left_timeout, std.time.us_per_ms) else -1);
-            try self.read_buf.appendSlice(utils.allocator, tmp_rd_buf[0..nb_read]);
-            const current_time = utils.micro_timestamp();
-            left_timeout = @intCast(@max(0, timeout - (start_time - current_time)));
-        }
+        const line = try utils.readline_with_timeout(self.reader, timeout);
+        return line[0 .. line.len - 1];
     }
 
     fn send_format_message(self: *Self, comptime fmt: []const u8, args: anytype) !void {
-        const to_send = try std.fmt.allocPrint(utils.allocator, fmt, args);
-        defer utils.allocator.free(to_send);
-        try self.send_message(to_send);
+        logz.debug().ctx("Sending message").fmt("data", fmt, args).int("player", self.p_num).log();
+        try self.writer.print(fmt ++ "\r\n", args);
+        try self.writer.flush();
     }
 
     fn send_about(self: *Self) !void {
-        try self.send_message("ABOUT\r\n");
+        try self.send_message("ABOUT");
     }
 
     fn send_ok(self: *Self) !void {
-        try self.send_message("OK\r\n");
+        try self.send_message("OK");
     }
 
     fn send_info_no_check(self: *Self, T: type, name: []const u8, val: T) !void {
         switch (T) {
-            u64 => try self.send_format_message("INFO {s} {}\r\n", .{ name, val }),
+            u64 => try self.send_format_message("INFO {s} {}", .{ name, val }),
             else => @compileError("Missing serializer for send_info_no_check for type " ++ @typeName(T)),
         }
     }
@@ -219,24 +210,24 @@ pub const Client = struct {
 
     fn send_ko(self: *Self, msg: ?[]const u8) !void {
         if (msg) |m| {
-            try self.send_format_message("KO {s}\r\n", .{m});
-        } else try self.send_message("KO\r\n");
+            try self.send_format_message("KO {s}", .{m});
+        } else try self.send_message("KO");
     }
 
     fn send_begin(self: *Self) !void {
-        try self.send_message("BEGIN\r\n");
+        try self.send_message("BEGIN");
     }
 
     fn send_turn(self: *Self, pos: game.Position) !void {
-        try self.send_format_message("TURN {},{}\r\n", .{ pos[0], pos[1] });
+        try self.send_format_message("TURN {},{}", .{ pos[0], pos[1] });
     }
 
     fn send_start(self: *Self, ctx: *const server.Context) !void {
-        try self.send_format_message("START {}\r\n", .{ctx.conf.game_board_size});
+        try self.send_format_message("START {}", .{ctx.conf.game_board_size});
     }
 
     fn send_end(self: *Self) !void {
-        try self.send_message("END\r\n");
+        try self.send_message("END");
     }
 
     fn handle_log(self: *Self, l: *const protocol.ClientCommandLog) void {
@@ -310,6 +301,5 @@ pub const Client = struct {
             self.infos.deinit(utils.allocator);
         }
         utils.allocator.free(self.filepath);
-        self.read_buf.deinit(utils.allocator);
     }
 };
