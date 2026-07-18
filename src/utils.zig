@@ -37,26 +37,20 @@ pub const ReadWriteError = error{
 };
 
 // timeout in ms
-// TODO: Handle timeouts on windows
 pub fn read_with_timeout(f: std.Io.File, output: []u8, timeout: i32) !usize {
-    if (builtin.os.tag == .windows) {
-        // Windows is broken currently, will fix later ✨
-        return 0;
-    }
-    if (builtin.os.tag != .windows) {
-        var fds: [1]std.posix.pollfd = .{
-            .{
-                .fd = f.handle,
-                .events = std.posix.POLL.IN | std.posix.POLL.HUP,
-                .revents = 0,
-            },
-        };
-        const poll_ret = try std.posix.poll(&fds, timeout);
-        if (poll_ret == 0)
-            return ReadWriteError.TimeoutError;
-        std.debug.assert(poll_ret == 1);
-        if (fds[0].revents & std.posix.POLL.HUP != 0)
-            return ReadWriteError.ConnectionError;
-    }
-    return std.posix.read(f.handle, output);
+    const SelectResult = union(enum) { timeout: anyerror!void, rd: anyerror!usize };
+    var buf: [1]SelectResult = undefined;
+
+    var select: std.Io.Select(SelectResult) = .init(io, &buf);
+    defer select.cancelDiscard();
+
+    const output_buf = &[_][]u8{output};
+
+    try select.concurrent(.timeout, std.Io.sleep, .{ io, .fromMilliseconds(timeout), .awake });
+    try select.concurrent(.rd, std.Io.File.readStreaming, .{ f, io, output_buf });
+
+    return switch (try select.await()) {
+        .timeout => error.RequestTimeout,
+        .rd => |res| res,
+    };
 }
