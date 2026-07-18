@@ -44,16 +44,16 @@ pub fn read_with_timeout(f: std.Io.File, output: []u8, timeout: i32) !usize {
     var select: std.Io.Select(SelectResult) = .init(io, &buf);
     defer select.cancelDiscard();
 
-    select.concurrent(.timeout, std.Io.sleep, .{
+    select.async(.timeout, std.Io.sleep, .{
         io,
         .fromMilliseconds(timeout),
         .awake,
-    }) catch unreachable;
-    select.concurrent(.rd, std.Io.File.readStreaming, .{
+    });
+    select.async(.rd, std.Io.File.readStreaming, .{
         f,
         io,
         &[_][]u8{output},
-    }) catch unreachable;
+    });
 
     return switch (try select.await()) {
         .timeout => ReadWriteError.TimeoutError,
